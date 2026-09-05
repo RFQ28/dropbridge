@@ -110,8 +110,10 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);
 .status{font-size:12px;color:var(--accent);min-height:16px;margin-top:2px}
 
 /* ---- tabs ---- */
-.tabs-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap}
-.tabs{position:relative;display:flex;gap:2px;overflow:visible;padding:4px;background:#1A2440;border:1px solid #2A3A63;border-radius:22px}
+.tabs-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap;max-width:100%}
+.tabs-scroll{flex:1;min-width:0;overflow-x:auto;overflow-y:visible;padding-top:20px;margin-top:-20px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.tabs-scroll::-webkit-scrollbar{display:none}
+.tabs{position:relative;display:flex;gap:2px;padding:4px;background:#1A2440;border:1px solid #2A3A63;border-radius:22px;width:max-content}
 .tabs-defs{position:absolute;width:0;height:0;overflow:hidden}
 .tab-indicator{position:absolute;top:4px;left:0;background:#33477A;clip-path:url(#tab-blob);transition:transform .5s cubic-bezier(.34,1.56,.64,1),width .5s cubic-bezier(.34,1.56,.64,1),height .5s cubic-bezier(.34,1.56,.64,1);pointer-events:none;z-index:0}
 .tab{position:relative;z-index:1;white-space:nowrap;padding:7px 14px 7px 7px;background:none;border:1px solid transparent;border-radius:20px;color:var(--muted);font-size:13px;display:flex;align-items:center;gap:8px;transition:color .2s ease}
@@ -506,13 +508,15 @@ function renderApp(){
     </div>
 
     <div class="tabs-row">
-      <div class="tabs" id="tabs">
-        <svg class="tabs-defs" aria-hidden="true" focusable="false">
-          <clipPath id="tab-blob" clipPathUnits="objectBoundingBox">
-            <path d="M0,1 C0.16,1 0.24,0.05 0.5,0.05 C0.76,0.05 0.84,1 1,1 Z"/>
-          </clipPath>
-        </svg>
-        <div class="tab-indicator" id="tab-indicator"></div>
+      <div class="tabs-scroll">
+        <div class="tabs" id="tabs">
+          <svg class="tabs-defs" aria-hidden="true" focusable="false">
+            <clipPath id="tab-blob" clipPathUnits="objectBoundingBox">
+              <path d="M0,1 C0.16,1 0.24,0.05 0.5,0.05 C0.76,0.05 0.84,1 1,1 Z"/>
+            </clipPath>
+          </svg>
+          <div class="tab-indicator" id="tab-indicator"></div>
+        </div>
       </div>
       <span class="result-count hidden" id="result-count"></span>
     </div>
