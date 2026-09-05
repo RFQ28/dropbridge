@@ -8,7 +8,7 @@
 :root{
   --bg:#0F1115; --panel:#171A21; --panel-2:#1D212B; --border:#2A2F3A; --border-soft:#232733;
   --text:#EDEEF2; --muted:#8A90A0; --muted-2:#5D6373;
-  --accent:#F2B134; --accent-ink:#241C08; --accent-soft:rgba(242,177,52,.12);
+  --accent:#6EA8FE; --accent-ink:#0B0D14; --accent-soft:rgba(110,168,254,.12);
   --danger:#E0654D; --danger-soft:rgba(224,101,77,.12);
   --success:#3FBF7F; --success-soft:rgba(63,191,127,.12);
   --radius:14px; --radius-sm:9px;
@@ -19,7 +19,7 @@
 *{box-sizing:border-box}
 html,body{margin:0;height:100%}
 body{background:
-    radial-gradient(1200px 600px at 15% -10%, rgba(242,177,52,.05), transparent 60%),
+    radial-gradient(1200px 600px at 15% -10%, rgba(110,168,254,.05), transparent 60%),
     radial-gradient(900px 500px at 100% 0%, rgba(110,168,254,.04), transparent 55%),
     var(--bg);
   color:var(--text);font-family:var(--font);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
@@ -35,7 +35,7 @@ svg{display:block}
 /* ---- brand ---- */
 .brand{display:flex;align-items:center;gap:9px;font-size:20px;font-weight:700;margin:0;letter-spacing:-.01em}
 .brand .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px var(--accent);flex:none}
-.brand-badge{font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--accent);background:var(--accent-soft);border:1px solid rgba(242,177,52,.3);padding:2px 7px;border-radius:20px;margin-left:2px}
+.brand-badge{font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--accent);background:var(--accent-soft);border:1px solid rgba(110,168,254,.3);padding:2px 7px;border-radius:20px;margin-left:2px}
 
 /* ---- auth / config screens ---- */
 .center{min-height:100%;display:flex;align-items:center;justify-content:center;padding:24px}
@@ -48,7 +48,7 @@ label{display:block;font-size:13px;color:var(--muted);margin:14px 0 6px;font-wei
 input,textarea,select{width:100%;padding:11px 13px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text)}
 input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
 .primary{width:100%;padding:12px;background:var(--accent);color:var(--accent-ink);font-weight:600;margin-top:18px;border-radius:var(--radius-sm)}
-.primary:hover{background:#ffc75c}
+.primary:hover{background:#8FBBFF}
 .primary:disabled{opacity:.55;cursor:default}
 .link-btn{background:none;color:var(--muted);padding:9px 0;margin-top:6px;width:100%;text-align:center;font-size:13px}
 .link-btn:hover{color:var(--text)}
@@ -111,9 +111,9 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);
 
 /* ---- tabs ---- */
 .tabs-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap}
-.tabs{position:relative;display:flex;gap:2px;overflow:visible;padding:4px;background:var(--panel);border:1px solid var(--border);border-radius:22px}
+.tabs{position:relative;display:flex;gap:2px;overflow:visible;padding:4px;background:#1A2440;border:1px solid #2A3A63;border-radius:22px}
 .tabs-defs{position:absolute;width:0;height:0;overflow:hidden}
-.tab-indicator{position:absolute;top:4px;left:0;background:var(--panel);clip-path:url(#tab-blob);transition:transform .5s cubic-bezier(.34,1.56,.64,1),width .5s cubic-bezier(.34,1.56,.64,1),height .5s cubic-bezier(.34,1.56,.64,1);pointer-events:none;z-index:0}
+.tab-indicator{position:absolute;top:4px;left:0;background:#33477A;clip-path:url(#tab-blob);transition:transform .5s cubic-bezier(.34,1.56,.64,1),width .5s cubic-bezier(.34,1.56,.64,1),height .5s cubic-bezier(.34,1.56,.64,1);pointer-events:none;z-index:0}
 .tab{position:relative;z-index:1;white-space:nowrap;padding:7px 14px 7px 7px;background:none;border:1px solid transparent;border-radius:20px;color:var(--muted);font-size:13px;display:flex;align-items:center;gap:8px;transition:color .2s ease}
 .tab:hover{color:var(--text)}
 .tab.active{color:var(--tab-accent,var(--text));font-weight:600}
@@ -124,8 +124,9 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);
 @keyframes strok{
   100%{stroke-dashoffset:400}
 }
-.tab .count{opacity:.6;font-size:12px}
-.tab.active .count{opacity:.85}
+.tab .count{opacity:.45;font-size:12px;transition:opacity .2s ease,color .2s ease}
+.tab .count.has{opacity:1;font-weight:700;color:var(--tab-accent)}
+.tab.active .count.has{color:inherit;opacity:.85}
 .result-count{color:var(--muted-2);font-size:12.5px;white-space:nowrap}
 
 /* ---- folder stacks ---- */
@@ -158,7 +159,7 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);
 .item-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
 .item-title{font-weight:600;margin:0;word-break:break-all;font-size:14.5px}
 .item-title mark{background:var(--accent);color:var(--accent-ink);border-radius:3px;padding:0 1px}
-.badge-mine{font-size:10.5px;color:var(--accent);border:1px solid rgba(242,177,52,.3);background:var(--accent-soft);padding:1px 6px;border-radius:10px;flex:none}
+.badge-mine{font-size:10.5px;color:var(--accent);border:1px solid rgba(110,168,254,.3);background:var(--accent-soft);padding:1px 6px;border-radius:10px;flex:none}
 .item-text{white-space:pre-wrap;word-break:break-word;margin:8px 0 0;font-size:13.5px;color:var(--text)}
 .item-text mark{background:var(--accent);color:var(--accent-ink);border-radius:2px}
 .item-text.code{font-family:var(--mono);font-size:12.5px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:11px 12px;overflow-x:auto;max-height:220px}
@@ -214,7 +215,7 @@ const KIND_STYLE = {
   code:  {color:"#B387FA", bg:"rgba(179,135,250,.14)"},
   doc:   {color:"#FF8A65", bg:"rgba(255,138,101,.14)"},
   image: {color:"#4FD1C5", bg:"rgba(79,209,197,.14)"},
-  audio: {color:"#F2B134", bg:"rgba(242,177,52,.14)"},
+  audio: {color:"#F2669E", bg:"rgba(242,102,158,.14)"},
   other: {color:"#8A90A0", bg:"rgba(138,144,160,.14)"},
 };
 function tabStyle(key){
@@ -609,7 +610,7 @@ function paintTabs(){
     const active = activeCat===c.key;
     const s = tabStyle(c.key);
     const btn = h(`<button class="tab ${active?'active':''}" style="--tab-accent:${s.color}">
-      <span class="tab-icon">${ICON[c.key]||ICON.other}</span>${c.label}<span class="count">${n}</span>
+      <span class="tab-icon">${ICON[c.key]||ICON.other}</span>${c.label}<span class="count ${n>0?'has':''}">${n}</span>
     </button>`);
     btn.onclick = ()=>{ if(activeCat===c.key) return; activeCat=c.key; paintTabs(); paintItems(); };
     tabsEl.appendChild(btn);
