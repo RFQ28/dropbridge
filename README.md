@@ -93,14 +93,26 @@ even if they have the link.
 **To reach it from your phone and anywhere, host it** (pick one — all free):
 
 - **Netlify Drop** (easiest): go to app.netlify.com/drop and drag the
-  `index.html` file (or the whole folder) onto the page. You get a public
-  URL instantly.
+  **whole folder** onto the page (not just `index.html` — the icons,
+  `manifest.webmanifest` and `sw.js` need to come along for the phone
+  install to work). You get a public URL instantly.
 - **Vercel:** import the folder, deploy. Static, no config.
 - **GitHub Pages:** push the folder to a repo, enable Pages.
 - **Supabase Storage:** you can also drop the HTML in a public bucket.
 
 Then open that URL on your phone, your Mac, your Windows laptop — sign in,
 same shared space everywhere.
+
+### Install it on your phone
+
+Once it's hosted, DropBridge installs like a real app — its own icon, no
+browser bars:
+
+- **Android / Chrome:** open the URL → menu (⋮) → **Add to Home screen**
+  (or tap the install prompt when it appears).
+- **iPhone / Safari:** open the URL → Share button → **Add to Home Screen**.
+
+Hosting must be over `https://` for this — every option above already is.
 
 ---
 

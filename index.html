@@ -2,8 +2,20 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>DropBridge</title>
+
+<!-- Installable on a phone home screen; runs full-screen like an app.
+     These all degrade quietly if the files aren't deployed alongside. -->
+<meta name="theme-color" content="#0F1115">
+<meta name="description" content="A private shared space for text, code, docs, images and audio across your devices.">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="DropBridge">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png" type="image/png">
 <style>
 :root{
   --bg:#0F1115; --panel:#171A21; --panel-2:#1D212B; --border:#2A2F3A; --border-soft:#232733;
@@ -17,7 +29,7 @@
   --shadow:0 8px 24px -12px rgba(0,0,0,.5);
 }
 *{box-sizing:border-box}
-html,body{margin:0;height:100%}
+html,body{margin:0;height:100%;-webkit-text-size-adjust:100%}
 body{background:
     radial-gradient(1200px 600px at 15% -10%, rgba(110,168,254,.05), transparent 60%),
     radial-gradient(900px 500px at 100% 0%, rgba(110,168,254,.04), transparent 55%),
@@ -75,7 +87,8 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);
 .searchbox .clear{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;color:var(--muted);padding:4px;border-radius:6px}
 .searchbox .clear:hover{color:var(--text);background:var(--border)}
 .topbar-right{display:flex;align-items:center;gap:10px}
-.who{display:flex;align-items:center;gap:9px;color:var(--muted);font-size:13px}
+.who{display:flex;align-items:center;gap:9px;color:var(--muted);font-size:13px;min-width:0}
+.who-email{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 .avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#0B0D14;flex:none}
 .icon-btn{background:var(--panel-2);border:1px solid var(--border);color:var(--muted);width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-sm)}
 .icon-btn:hover{border-color:var(--accent);color:var(--text)}
@@ -201,10 +214,41 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);
 .empty b{color:var(--text)}
 .hidden{display:none!important}
 
+/* ---- small screens ---- */
+@media (max-width:860px){
+  .shell{padding:18px 14px calc(60px + env(safe-area-inset-bottom))}
+  .topbar{margin:-18px -14px 16px;padding:12px 14px;gap:10px;
+    padding-top:calc(12px + env(safe-area-inset-top))}
+  .hint{display:none}                      /* keyboard shortcut is desktop-only anyway */
+  .composer{padding:13px}
+}
 @media (max-width:640px){
   .searchbox{width:100%;max-width:none;order:3}
-  .topbar-left{width:100%}
-  .item{flex-direction:column}
+  .topbar-left{width:100%;gap:10px}
+  .topbar-right{width:100%;justify-content:space-between}
+  .who{min-width:0}
+  .who-email{max-width:46vw}
+  .item{flex-direction:column;padding:13px 14px}
+  .item-actions{flex-wrap:wrap;gap:12px}
+  .item-head{flex-wrap:wrap}
+  .folder-body{padding-left:10px;padding-right:10px}
+  .folder-head{padding:11px 12px;gap:10px}
+  .demo-banner{padding:10px 12px}
+  .composer-row{gap:8px}
+  .composer-row .primary{flex:1;justify-content:center}
+  .folder-field{width:100%}
+  /* iOS zooms the whole page when you focus an input under 16px */
+  input,textarea,select{font-size:16px}
+}
+@media (max-width:400px){
+  .brand{font-size:18px}
+  .item-title{font-size:14px}
+  .tab{padding:7px 10px 7px 6px;font-size:12.5px}
+  .item-actions{gap:10px}
+}
+/* Standalone (installed) mode: keep clear of the notch / home indicator. */
+@media (display-mode:standalone){
+  body{overscroll-behavior-y:none}
 }
 </style>
 </head>
@@ -520,7 +564,7 @@ function renderApp(){
         </div>
       </div>
       <div class="topbar-right">
-        <span class="who"><span class="avatar" style="${avatarStyle(email)}">${initials(email)}</span>${esc(email)}</span>
+        <span class="who"><span class="avatar" style="${avatarStyle(email)}">${initials(email)}</span><span class="who-email">${esc(email)}</span></span>
         <button class="icon-btn" id="signout" title="${DEMO?'Reset demo data':'Sign out'}">${DEMO?ICON.trash:ICON.logout}</button>
       </div>
     </div>
@@ -949,6 +993,15 @@ async function boot(){
   }
 }
 boot();
+
+// ---------- installable app ----------
+// Only over http(s) — opening index.html straight off disk has no origin
+// to register against, and that's fine: the app still works.
+if("serviceWorker" in navigator && location.protocol.startsWith("http")){
+  window.addEventListener("load", ()=>{
+    navigator.serviceWorker.register("sw.js").catch(()=>{ /* not fatal */ });
+  });
+}
 </script>
 </body>
 </html>
