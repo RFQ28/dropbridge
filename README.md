@@ -58,6 +58,27 @@ invite allowlist, the security rules that keep it private, and turns on
 >   table — so the check silently failed and blocked everyone. It now goes
 >   through the `is_allowed()` helper instead, which can read it safely.
 
+## Who can see what
+
+Every item you send is one of three things, chosen in the composer:
+
+| Choice | Who sees it |
+|---|---|
+| **Everyone** (default) | Everybody on your invite list — the shared space |
+| **Tagged only** | Just you and the people you tag, e.g. `@sam` |
+| **Just me** | Only you — your private area |
+
+This is enforced by the database, not just hidden in the app: someone who
+isn't tagged can't read the row or download the file even if they go
+looking. Only the owner can edit or delete an item.
+
+The filter above the tabs switches between **Everything**, **For me**
+(things tagged to you — it shows a count when there are any) and
+**Just mine**.
+
+The first time someone signs in they pick a username, which is how their
+teammates tag them.
+
 ## Step 2 — Invite people
 
 Add every email that's allowed to sign in:

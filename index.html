@@ -197,6 +197,52 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);
 .item-actions .del:hover{color:var(--danger)}
 .demo-limit{color:var(--muted-2);font-size:12px;font-style:italic;margin-top:8px}
 
+/* ---- sharing: scope filter, tagging, visibility ---- */
+.scope-row{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.scope{display:flex;background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-sm);padding:3px;gap:2px}
+.scope button{background:none;color:var(--muted);padding:6px 13px;font-size:13px;border-radius:7px;display:flex;align-items:center;gap:6px}
+.scope button:hover{color:var(--text)}
+.scope svg{width:14px;height:14px;flex:none}
+.scope button.active{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.scope .pill{background:var(--accent);color:var(--accent-ink);font-size:10.5px;font-weight:700;border-radius:9px;padding:0 5px;min-width:16px;text-align:center}
+
+.share-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center}
+.vis{display:flex;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:3px;gap:2px}
+.vis button{background:none;color:var(--muted);padding:6px 11px;font-size:12.5px;border-radius:7px;display:flex;align-items:center;gap:6px}
+.vis button.active{background:var(--panel-2);color:var(--text);font-weight:600}
+.vis button.active.tagged{color:var(--accent)}
+.vis svg{width:13px;height:13px}
+
+.tag-field{position:relative;flex:1;min-width:200px}
+.tag-box{display:flex;flex-wrap:wrap;gap:6px;align-items:center;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 9px;min-height:38px}
+.tag-box:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.tag-box input{border:none;background:none;padding:0;flex:1;min-width:90px;color:var(--text)}
+.tag-box input:focus{outline:none;box-shadow:none}
+.chip{display:inline-flex;align-items:center;gap:5px;background:var(--accent-soft);color:var(--accent);border:1px solid rgba(110,168,254,.3);border-radius:20px;padding:2px 5px 2px 9px;font-size:12px;font-weight:600}
+.chip button{background:none;color:inherit;padding:0 2px;display:flex;opacity:.7}
+.chip button:hover{opacity:1}
+.suggest{position:absolute;z-index:30;left:0;right:0;top:calc(100% + 4px);background:var(--panel-2);border:1px solid var(--border);border-radius:var(--radius-sm);box-shadow:var(--shadow);overflow:hidden;max-height:210px;overflow-y:auto}
+.suggest button{width:100%;display:flex;align-items:center;gap:9px;background:none;color:var(--text);padding:9px 12px;font-size:13px;text-align:left;border-radius:0}
+.suggest button:hover,.suggest button.sel{background:var(--accent-soft)}
+.suggest .mail{color:var(--muted-2);font-size:11.5px;margin-left:auto}
+.suggest .none{color:var(--muted-2);padding:10px 12px;font-size:12.5px}
+
+.item-share{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:9px;font-size:11.5px}
+.vis-badge{display:inline-flex;align-items:center;gap:5px;border-radius:20px;padding:2px 8px;font-weight:600;letter-spacing:.02em}
+.vis-badge svg{width:11px;height:11px}
+.vis-badge.tagged{color:var(--accent);background:var(--accent-soft);border:1px solid rgba(110,168,254,.3)}
+.vis-badge.private{color:var(--muted);background:rgba(138,144,160,.12);border:1px solid rgba(138,144,160,.3)}
+.tag-list{color:var(--muted);display:inline-flex;gap:5px;flex-wrap:wrap}
+.tag-list b{color:var(--accent);font-weight:600}
+
+/* ---- first sign-in: choose a handle ---- */
+.username-hint{color:var(--muted-2);font-size:12.5px;margin:6px 0 0}
+.at-field{display:flex;align-items:center;gap:2px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0 12px}
+.at-field span{color:var(--muted-2);font-size:15px}
+.at-field input{border:none;background:none;padding:11px 2px}
+.at-field input:focus{outline:none;box-shadow:none}
+.at-field:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+
 /* ---- voice-note transcripts ---- */
 .transcript{margin-top:10px;background:var(--bg);border:1px solid var(--border);border-left:2px solid var(--accent);border-radius:8px;padding:11px 13px}
 .transcript-label{display:flex;align-items:center;gap:6px;color:var(--accent);font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-bottom:7px}
@@ -300,6 +346,19 @@ let session = null;
 let items = [];
 let activeCat = "all";
 let searchQuery = "";
+let profiles = [];        // everyone in the space, for tagging
+let me = null;            // my own profile row
+let scope = "all";        // 'all' | 'forme' | 'mine'
+let closeTagSuggest = null;
+// Registered once, rather than per render, so re-rendering can't pile up
+// stale listeners.
+document.addEventListener("click", (e)=>{
+  const tf = document.getElementById("tag-field");
+  if(closeTagSuggest && (!tf || !tf.contains(e.target))) closeTagSuggest();
+});
+
+function profileFor(id){ return profiles.find(p=>p.user_id===id) || null; }
+function handleFor(id){ const p = profileFor(id); return p ? "@"+p.username : "someone"; }
 
 // ---------- helpers ----------
 function h(html){const t=document.createElement("template");t.innerHTML=html.trim();return t.content.firstChild;}
@@ -353,6 +412,11 @@ const ICON = {
   folder:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/></svg>',
   chevron:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>',
   caret:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>',
+  globe:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg>',
+  at:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8"/></svg>',
+  lock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
+  inbox2:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>',
+  layers2:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 9l10 6 10-6-10-6z"/><path d="m2 15 10 6 10-6"/></svg>',
   inbox:'<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>',
   alert:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>',
 };
@@ -393,22 +457,30 @@ const DemoBackend = (()=>{
     try{ u = JSON.parse(localStorage.getItem(LS_USER)||"null"); }catch{}
     return u || {id:"demo", email:"you@demo.local"};
   }
+  // Stand-ins so tagging can be tried out without a real project.
+  const DEMO_PROFILES = [
+    {user_id:"demo",    username:"you",    email:"you@demo.local",    username_set:true},
+    {user_id:"jordan",  username:"jordan", email:"jordan@demo.local", username_set:true},
+    {user_id:"sam",     username:"sam",    email:"sam@demo.local",    username_set:true},
+  ];
 
   return {
     async getSession(){ seedIfEmpty(); return {user: currentUser()}; },
     onAuthChange(){ /* single local user, nothing to watch */ },
     async signOut(){ /* no-op in demo */ },
     async listItems(){ return load().sort((a,b)=> new Date(b.created_at)-new Date(a.created_at)); },
-    async insertItem({owner,owner_email,kind,title,content,folder}){
+    async insertItem({owner,owner_email,kind,title,content,folder,visibility,tagged}){
       const list = load();
-      const it = {id:crypto.randomUUID(), owner, owner_email, kind, title, content, folder:folder||null, created_at:new Date().toISOString()};
+      const it = {id:crypto.randomUUID(), owner, owner_email, kind, title, content, folder:folder||null,
+                  visibility:visibility||"everyone", tagged:tagged||[], created_at:new Date().toISOString()};
       list.unshift(it); save(list);
       listeners.insert.forEach(cb=>cb(it));
       return it;
     },
-    async insertFile({owner,owner_email,kind,file,folder}){
+    async insertFile({owner,owner_email,kind,file,folder,visibility,tagged}){
       const list = load();
-      const it = {id:crypto.randomUUID(), owner, owner_email, kind, title:file.name, size:file.size, mime:file.type, folder:folder||null, created_at:new Date().toISOString()};
+      const it = {id:crypto.randomUUID(), owner, owner_email, kind, title:file.name, size:file.size, mime:file.type, folder:folder||null,
+                  visibility:visibility||"everyone", tagged:tagged||[], created_at:new Date().toISOString()};
       if(file.size <= MAX_DEMO_FILE){
         it.dataUrl = await new Promise((res)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.readAsDataURL(file); });
       } else {
@@ -430,6 +502,10 @@ const DemoBackend = (()=>{
       save(list);
       return it;
     },
+    async setTranscript(id, text){ return this.updateItem(id, {transcript:text}); },
+    async listProfiles(){ return DEMO_PROFILES.slice(); },
+    async myProfile(){ return DEMO_PROFILES[0]; },
+    async setUsername(name){ DEMO_PROFILES[0].username = name; return DEMO_PROFILES[0]; },
     async transcribe(){
       throw new Error("Transcription needs a real Supabase project — it isn't available in Demo Mode.");
     },
@@ -447,8 +523,27 @@ const SupaBackend = configured ? {
   async signUp(email,password){ return sb.auth.signUp({email,password}); },
   async signOut(){ return sb.auth.signOut(); },
   async listItems(){ const {data,error} = await sb.from("items").select("*").order("created_at",{ascending:false}); if(error) throw error; return data||[]; },
-  async insertItem({owner,owner_email,kind,title,content,folder}){ const {error} = await sb.from("items").insert({owner,owner_email,kind,title,content,folder:folder||null}); if(error) throw error; },
+  async insertItem({owner,owner_email,kind,title,content,folder,visibility,tagged}){
+    const {error} = await sb.from("items").insert({owner,owner_email,kind,title,content,folder:folder||null,
+      visibility:visibility||"everyone", tagged:tagged||[]});
+    if(error) throw error;
+  },
   async updateItem(id, patch){ const {error} = await sb.from("items").update(patch).eq("id", id); if(error) throw error; },
+  // Goes through an RPC so anyone who can see a voice note can caption it,
+  // without being able to edit the rest of the row.
+  async setTranscript(id, text){ const {error} = await sb.rpc("set_transcript", {item_id:id, text_in:text}); if(error) throw error; },
+  async listProfiles(){ const {data,error} = await sb.from("profiles").select("*").order("username"); if(error) throw error; return data||[]; },
+  async myProfile(){
+    const {data:{user}} = await sb.auth.getUser();
+    if(!user) return null;
+    const {data} = await sb.from("profiles").select("*").eq("user_id", user.id).maybeSingle();
+    return data || null;
+  },
+  async setUsername(name){
+    const {data:{user}} = await sb.auth.getUser();
+    const {error} = await sb.from("profiles").update({username:name, username_set:true}).eq("user_id", user.id);
+    if(error) throw error;
+  },
   async transcribe(payload){
     const {data,error} = await sb.functions.invoke("transcribe", {body: payload});
     if(error){
@@ -460,11 +555,12 @@ const SupaBackend = configured ? {
     if(data?.error) throw new Error(data.error);
     return data?.text || "";
   },
-  async insertFile({owner,owner_email,kind,file,folder}){
+  async insertFile({owner,owner_email,kind,file,folder,visibility,tagged}){
     const path = owner + "/" + Date.now() + "_" + file.name.replace(/[^\w.\-]+/g,"_");
     const {error:upErr} = await sb.storage.from("shared").upload(path, file, {upsert:false});
     if(upErr) throw upErr;
-    const {data,error} = await sb.from("items").insert({owner,owner_email,kind,title:file.name,storage_path:path,size:file.size,mime:file.type,folder:folder||null}).select().single();
+    const {data,error} = await sb.from("items").insert({owner,owner_email,kind,title:file.name,storage_path:path,size:file.size,mime:file.type,folder:folder||null,
+      visibility:visibility||"everyone", tagged:tagged||[]}).select().single();
     if(error) throw error;
     return data;
   },
@@ -492,7 +588,52 @@ const Backend = DEMO ? DemoBackend : SupaBackend;
 // ---------- rendering ----------
 function render(){
   if (!session){ renderAuth(); return; }
+  // First time in, people choose the handle others will tag them by.
+  if (me && !me.username_set){ renderUsernamePicker(); return; }
   renderApp();
+}
+
+function renderUsernamePicker(){
+  root.innerHTML = "";
+  const suggested = me?.username || "";
+  const wrap = h(`<div class="center"><div class="card">
+    <h1 class="brand"><span class="dot"></span>DropBridge</h1>
+    <p class="tagline">Pick the handle your team will tag you by.</p>
+    <label>Your username</label>
+    <div class="at-field"><span>@</span><input id="uname" autocomplete="off" spellcheck="false" maxlength="20" value="${esc(suggested)}"></div>
+    <p class="username-hint">Letters, numbers and underscores. You can change it later.</p>
+    <button class="primary" id="save-uname">Continue</button>
+    <div id="uname-msg"></div>
+  </div></div>`);
+  root.appendChild(wrap);
+
+  const input = wrap.querySelector("#uname");
+  const btn = wrap.querySelector("#save-uname");
+  const msg = wrap.querySelector("#uname-msg");
+  input.focus();
+  input.select();
+
+  const fail = (t)=>{ msg.innerHTML=""; msg.appendChild(h(`<div class="msg err">${ICON.alert}<span>${esc(t)}</span></div>`)); };
+
+  btn.onclick = async ()=>{
+    const name = input.value.trim().toLowerCase();
+    if(!/^[a-z0-9_]{2,20}$/.test(name)){
+      return fail("2–20 characters, using letters, numbers or underscores.");
+    }
+    const taken = profiles.some(p=>p.username===name && p.user_id!==me.user_id);
+    if(taken) return fail("That handle is already taken.");
+    btn.disabled = true;
+    try{
+      await Backend.setUsername(name);
+      me = await Backend.myProfile();
+      profiles = await Backend.listProfiles();
+      render();
+    }catch(e){
+      btn.disabled = false;
+      fail(e.message || "Couldn't save that username.");
+    }
+  };
+  input.addEventListener("keydown", e=>{ if(e.key==="Enter") btn.click(); });
 }
 
 function renderAuth(){
@@ -584,6 +725,18 @@ function renderApp(){
         <button class="primary" id="send-note">${ICON.send} Send</button>
         <span class="hint">⌘/Ctrl + Enter to send</span>
       </div>
+      <div class="share-row">
+        <div class="vis" id="vis-pick">
+          <button data-v="everyone" class="active" title="Everyone in the space can see it">${ICON.globe}Everyone</button>
+          <button data-v="tagged" title="Only the people you tag">${ICON.at}Tagged only</button>
+          <button data-v="private" title="Only you">${ICON.lock}Just me</button>
+        </div>
+        <div class="tag-field hidden" id="tag-field">
+          <div class="tag-box" id="tag-box">
+            <input id="tag-input" placeholder="Tag people — type a name" autocomplete="off" spellcheck="false">
+          </div>
+        </div>
+      </div>
       <div class="folder-row">
         <label class="folder-field">${ICON.folder}<input id="folder-name" list="folder-suggestions" placeholder="Folder (optional) — e.g. Launch Prep" autocomplete="off"></label>
         <datalist id="folder-suggestions"></datalist>
@@ -596,6 +749,13 @@ function renderApp(){
       </div>
     </div>
 
+    <div class="scope-row">
+      <div class="scope" id="scope-pick">
+        <button data-s="all" class="active">${ICON.layers2}Everything</button>
+        <button data-s="forme">${ICON.inbox2}For me<span class="pill hidden" id="forme-count">0</span></button>
+        <button data-s="mine">${ICON.lock}Just mine</button>
+      </div>
+    </div>
     <div class="tabs-row">
       <div class="tabs-scroll">
         <div class="tabs" id="tabs">
@@ -632,6 +792,112 @@ function renderApp(){
   });
   clearBtn.onclick = ()=>{ searchQuery=""; searchEl.value=""; clearBtn.classList.add("hidden"); searchEl.focus(); paintItems(); };
 
+  // ---------- who is this for? ----------
+  let visibility = "everyone";
+  let tagged = [];                       // user_ids
+  const visWrap  = shell.querySelector("#vis-pick");
+  const tagField = shell.querySelector("#tag-field");
+  const tagBox   = shell.querySelector("#tag-box");
+  const tagInput = shell.querySelector("#tag-input");
+  let suggestBox = null, selIdx = 0;
+
+  function paintChips(){
+    tagBox.querySelectorAll(".chip").forEach(c=>c.remove());
+    tagged.forEach(id=>{
+      const chip = h(`<span class="chip">@${esc(profileFor(id)?.username || "someone")}<button title="Remove">${ICON.close}</button></span>`);
+      chip.querySelector("button").onclick = ()=>{ tagged = tagged.filter(x=>x!==id); paintChips(); };
+      tagBox.insertBefore(chip, tagInput);
+    });
+  }
+
+  function closeSuggest(){ if(suggestBox){ suggestBox.remove(); suggestBox = null; } selIdx = 0; }
+
+  function candidates(){
+    const q = tagInput.value.trim().toLowerCase().replace(/^@/,"");
+    return profiles
+      .filter(p=> p.user_id !== me?.user_id && !tagged.includes(p.user_id))
+      .filter(p=> !q || p.username.toLowerCase().includes(q) || (p.email||"").toLowerCase().includes(q));
+  }
+
+  function openSuggest(){
+    closeSuggest();
+    const list = candidates();
+    suggestBox = h(`<div class="suggest"></div>`);
+    if(!list.length){
+      suggestBox.appendChild(h(`<div class="none">${profiles.length<=1 ? "Nobody else has signed up yet." : "No match."}</div>`));
+    } else {
+      list.forEach((p,i)=>{
+        const b = h(`<button class="${i===selIdx?'sel':''}">@${esc(p.username)}<span class="mail">${esc(p.email||"")}</span></button>`);
+        b.onclick = ()=>addTag(p.user_id);
+        suggestBox.appendChild(b);
+      });
+    }
+    tagField.appendChild(suggestBox);
+  }
+
+  function addTag(id){
+    if(!tagged.includes(id)) tagged.push(id);
+    tagInput.value = "";
+    paintChips();
+    closeSuggest();
+    tagInput.focus();
+  }
+
+  closeTagSuggest = closeSuggest;   // let the one document-level listener reach us
+  tagInput.addEventListener("focus", openSuggest);
+  tagInput.addEventListener("input", ()=>{ selIdx = 0; openSuggest(); });
+  tagInput.addEventListener("keydown", (e)=>{
+    const list = candidates();
+    if(e.key==="ArrowDown"){ e.preventDefault(); selIdx = Math.min(selIdx+1, list.length-1); openSuggest(); }
+    else if(e.key==="ArrowUp"){ e.preventDefault(); selIdx = Math.max(selIdx-1, 0); openSuggest(); }
+    else if(e.key==="Enter" && list.length){ e.preventDefault(); addTag(list[selIdx].user_id); }
+    else if(e.key==="Escape"){ closeSuggest(); }
+    else if(e.key==="Backspace" && !tagInput.value && tagged.length){ tagged.pop(); paintChips(); }
+  });
+  function setVisibility(v){
+    visibility = v;
+    visWrap.querySelectorAll("button").forEach(x=>{
+      const on = x.dataset.v === v;
+      x.classList.toggle("active", on);
+      x.classList.toggle("tagged", on && v==="tagged");
+    });
+    tagField.classList.toggle("hidden", v!=="tagged");
+    if(v!=="tagged") closeSuggest();
+  }
+
+  visWrap.querySelectorAll("button").forEach(b=>b.onclick=()=>{
+    setVisibility(b.dataset.v);
+    // Focus after this click finishes bubbling, or the document-level
+    // "click outside" handler would immediately shut the suggestions again.
+    if(visibility==="tagged") setTimeout(()=>tagInput.focus(), 0);
+  });
+
+  // Sharing choices are per-item: carrying them over risks quietly sending
+  // the next thing to the wrong person.
+  function resetShare(){
+    tagged = [];
+    paintChips();
+    tagInput.value = "";
+    setVisibility("everyone");
+  }
+
+  // ---------- scope filter ----------
+  const scopeWrap = shell.querySelector("#scope-pick");
+  scopeWrap.querySelectorAll("button").forEach(b=>{
+    b.classList.toggle("active", b.dataset.s===scope);
+    b.onclick = ()=>{
+      scope = b.dataset.s;
+      scopeWrap.querySelectorAll("button").forEach(x=>x.classList.toggle("active", x===b));
+      paintTabs(); paintItems();
+    };
+  });
+
+  // Resolves the composer's sharing choice, or null if it's incomplete.
+  function shareFor(){
+    if(visibility === "tagged" && !tagged.length) return null;
+    return { visibility, tagged: visibility === "tagged" ? tagged.slice() : [] };
+  }
+
   // send text/code
   const noteEl = shell.querySelector("#note");
   const sendBtn = shell.querySelector("#send-note");
@@ -659,6 +925,8 @@ function renderApp(){
     if(!content) return;
     const folder = folderEl.value.trim() || null;
     const status = shell.querySelector("#status");
+    const share = shareFor();
+    if(!share){ status.textContent = "Tag at least one person, or switch to Everyone."; return; }
     sendBtn.disabled = true;
     try{
       // A bare YouTube link becomes its transcript rather than a naked URL.
@@ -670,15 +938,16 @@ function renderApp(){
         const title = firstLine.startsWith("#")
           ? firstLine.replace(/^#+\s*/,"").slice(0,80)
           : "YouTube transcript · " + vid;
-        await Backend.insertItem({owner: session.user.id, owner_email: email, kind:"text", title, content: text, folder});
+        await Backend.insertItem({owner: session.user.id, owner_email: email, kind:"text", title, content: text, folder, ...share});
         status.textContent = "Transcript saved.";
         setTimeout(()=>status.textContent="", 2500);
       } else {
         const title = content.split("\n")[0].slice(0,60) + (content.length>60?"…":"");
-        await Backend.insertItem({owner: session.user.id, owner_email: email, kind: noteKind, title, content, folder});
+        await Backend.insertItem({owner: session.user.id, owner_email: email, kind: noteKind, title, content, folder, ...share});
       }
       noteEl.value="";
       noteEl.style.height = "";
+      resetShare();
       await loadItems();
     } catch(e){
       status.textContent = "Failed: " + (e.message || e);
@@ -692,12 +961,15 @@ function renderApp(){
   const status = shell.querySelector("#status");
   async function upload(file){
     if(!file) return;
+    const share = shareFor();
+    if(!share){ status.textContent = "Tag at least one person, or switch to Everyone."; return; }
     status.textContent = "Uploading "+file.name+"…";
     const kind = classify(file);
     const folder = folderEl.value.trim() || null;
     try{
-      const created = await Backend.insertFile({owner: session.user.id, owner_email: email, kind, file, folder});
+      const created = await Backend.insertFile({owner: session.user.id, owner_email: email, kind, file, folder, ...share});
       status.textContent = "Sent.";
+      resetShare();
       await loadItems();
 
       // Voice notes get turned into text automatically.
@@ -705,7 +977,7 @@ function renderApp(){
         status.textContent = "Transcribing voice note…";
         try{
           const text = await Backend.transcribe({storage_path: created.storage_path});
-          await Backend.updateItem(created.id, {transcript: text});
+          await Backend.setTranscript(created.id, text);
           const row = items.find(x=>x.id===created.id);
           if(row) row.transcript = text;
           paintItems();
@@ -739,12 +1011,24 @@ function matchesSearch(it, q){
 
 const openFolders = new Set();
 
+const myId = ()=> session?.user?.id;
+function isForMe(it){ return (it.tagged||[]).includes(myId()) && it.owner !== myId(); }
+function isJustMine(it){ return it.owner === myId() && it.visibility === "private"; }
+
+// The Everything / For me / Just mine filter, applied before anything else.
+function inScope(it){
+  if(scope === "forme") return isForMe(it);
+  if(scope === "mine")  return isJustMine(it);
+  return true;
+}
+
 function paintTabs(){
   const tabsEl = document.getElementById("tabs");
   if(!tabsEl) return;
+  const scoped = items.filter(inScope);
   tabsEl.querySelectorAll(".tab").forEach(b=>b.remove());
   CATS.forEach(c=>{
-    const n = c.key==="all" ? items.length : items.filter(i=>i.kind===c.key).length;
+    const n = c.key==="all" ? scoped.length : scoped.filter(i=>i.kind===c.key).length;
     const active = activeCat===c.key;
     const s = tabStyle(c.key);
     const btn = h(`<button class="tab ${active?'active':''}" style="--tab-accent:${s.color}">
@@ -778,9 +1062,18 @@ function paintItems(){
   const empty = document.getElementById("empty");
   const resultCount = document.getElementById("result-count");
   if(!wrap) return;
-  let list = activeCat==="all" ? items : items.filter(i=>i.kind===activeCat);
+  let list = items.filter(inScope);
+  if(activeCat!=="all") list = list.filter(i=>i.kind===activeCat);
   list = list.filter(i=>matchesSearch(i, searchQuery));
   wrap.innerHTML="";
+
+  // badge on the "For me" tab
+  const fc = document.getElementById("forme-count");
+  if(fc){
+    const n = items.filter(isForMe).length;
+    fc.textContent = n;
+    fc.classList.toggle("hidden", n===0);
+  }
 
   if(searchQuery){
     resultCount.classList.remove("hidden");
@@ -867,7 +1160,7 @@ async function runTranscribe(it, node){
   body.appendChild(status);
   try{
     const text = await Backend.transcribe({storage_path: it.storage_path});
-    await Backend.updateItem(it.id, {transcript: text});
+    await Backend.setTranscript(it.id, text);
     const row = items.find(x=>x.id===it.id);
     if(row) row.transcript = text;
     paintItems();
@@ -913,6 +1206,19 @@ function itemNode(it){
 
   if(it.kind==="audio" && it.transcript){
     body.appendChild(transcriptBlock(it));
+  }
+
+  // Who can see this? Only shown when it isn't the default shared-with-all.
+  if(it.visibility === "tagged" || it.visibility === "private"){
+    const row = h(`<div class="item-share"></div>`);
+    if(it.visibility === "private"){
+      row.appendChild(h(`<span class="vis-badge private">${ICON.lock}Just you</span>`));
+    } else {
+      row.appendChild(h(`<span class="vis-badge tagged">${ICON.at}Tagged only</span>`));
+      const names = (it.tagged||[]).map(id => id===myId() ? "<b>you</b>" : "<b>"+esc(handleFor(id))+"</b>");
+      if(names.length) row.appendChild(h(`<span class="tag-list">→ ${names.join(", ")}</span>`));
+    }
+    body.appendChild(row);
   }
 
   const meta = h(`<p class="item-meta"></p>`);
@@ -977,15 +1283,30 @@ function startRealtime(){
 }
 function stopRealtime(){ if(realtimeStarted){ Backend.stopRealtime(); realtimeStarted=false; } }
 
+// Who's in the space, and which of them is me.
+async function loadPeople(){
+  try{
+    profiles = await Backend.listProfiles();
+    me = await Backend.myProfile();
+  }catch(e){
+    // An older project without the profiles table shouldn't break the app;
+    // tagging just stays unavailable until setup.sql is re-run.
+    profiles = []; me = null;
+    console.warn("Profiles unavailable — re-run supabase/setup.sql to enable tagging.", e.message||e);
+  }
+}
+
 // ---------- boot ----------
 async function boot(){
   session = await Backend.getSession();
+  if(session) await loadPeople();
   render();
   if(session){ await loadItems(); startRealtime(); }
 
   if(!DEMO){
-    Backend.onAuthChange((s)=>{
+    Backend.onAuthChange(async (s)=>{
       session = s;
+      if(session) await loadPeople();
       render();
       if(session){ loadItems(); startRealtime(); }
       else { stopRealtime(); }
