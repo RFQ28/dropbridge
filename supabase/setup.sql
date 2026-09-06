@@ -205,9 +205,9 @@ grant execute on function public.set_transcript(uuid, text) to authenticated;
 
 alter table public.items enable row level security;
 
--- Any signed-in, allowed user can read every item (it's a shared space).
 -- You see an item if it's shared with the whole space, or it's yours, or
 -- you were tagged on it.
+drop policy if exists "allowed users read all items" on public.items;
 create policy "allowed users read all items"
   on public.items for select
   to authenticated
@@ -221,12 +221,14 @@ create policy "allowed users read all items"
   );
 
 -- Signed-in allowed users can insert items they own.
+drop policy if exists "allowed users insert own items" on public.items;
 create policy "allowed users insert own items"
   on public.items for insert
   to authenticated
   with check ( owner = auth.uid() and public.is_allowed() );
 
 -- Users can delete their own items.
+drop policy if exists "users delete own items" on public.items;
 create policy "users delete own items"
   on public.items for delete
   to authenticated
@@ -236,7 +238,15 @@ create policy "users delete own items"
 -- 2b. Turn on Realtime for the items table, so a shared item
 --     appears on every device the instant it's sent.
 -- ------------------------------------------------------------
-alter publication supabase_realtime add table public.items;
+-- (Ignore the error if it's already published — that just means this file
+-- has been run before.)
+do $$
+begin
+  alter publication supabase_realtime add table public.items;
+exception
+  when duplicate_object then null;
+  when others then null;
+end $$;
 
 -- ------------------------------------------------------------
 -- 3. Storage bucket for the actual files.
@@ -268,6 +278,7 @@ $$;
 
 grant execute on function public.can_read_object(text) to authenticated;
 
+drop policy if exists "allowed read shared files" on storage.objects;
 create policy "allowed read shared files"
   on storage.objects for select
   to authenticated
@@ -282,12 +293,14 @@ create policy "allowed read shared files"
   );
 
 -- Allowed users can upload to the bucket.
+drop policy if exists "allowed upload shared files" on storage.objects;
 create policy "allowed upload shared files"
   on storage.objects for insert
   to authenticated
   with check ( bucket_id = 'shared' and public.is_allowed() );
 
 -- Users can delete files they uploaded (path is prefixed with their user id).
+drop policy if exists "users delete own shared files" on storage.objects;
 create policy "users delete own shared files"
   on storage.objects for delete
   to authenticated
