@@ -19,6 +19,29 @@ insert into public.allowed_emails (email) values
   ('you@example.com')
 on conflict (email) do nothing;
 
+-- Lock the allowlist down: nobody reads it directly through the API.
+alter table public.allowed_emails enable row level security;
+
+-- IMPORTANT: the policies below must check "is this user invited?", but a
+-- policy's sub-query runs as the *calling user*, who cannot read the locked
+-- table above — it would silently return zero rows and deny everything.
+-- This security-definer helper reads the allowlist with the owner's rights,
+-- so the check works without exposing the table to anyone.
+create or replace function public.is_allowed()
+returns boolean
+language sql
+security definer
+stable
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.allowed_emails a
+    where a.email = auth.jwt() ->> 'email'
+  );
+$$;
+
+grant execute on function public.is_allowed() to authenticated;
+
 -- ------------------------------------------------------------
 -- 2. Shared items table (both text snippets and file records).
 -- ------------------------------------------------------------
@@ -45,24 +68,13 @@ alter table public.items enable row level security;
 create policy "allowed users read all items"
   on public.items for select
   to authenticated
-  using (
-    exists (
-      select 1 from public.allowed_emails a
-      where a.email = auth.jwt() ->> 'email'
-    )
-  );
+  using ( public.is_allowed() );
 
 -- Signed-in allowed users can insert items they own.
 create policy "allowed users insert own items"
   on public.items for insert
   to authenticated
-  with check (
-    owner = auth.uid()
-    and exists (
-      select 1 from public.allowed_emails a
-      where a.email = auth.jwt() ->> 'email'
-    )
-  );
+  with check ( owner = auth.uid() and public.is_allowed() );
 
 -- Users can delete their own items.
 create policy "users delete own items"
@@ -87,25 +99,13 @@ on conflict (id) do nothing;
 create policy "allowed read shared files"
   on storage.objects for select
   to authenticated
-  using (
-    bucket_id = 'shared'
-    and exists (
-      select 1 from public.allowed_emails a
-      where a.email = auth.jwt() ->> 'email'
-    )
-  );
+  using ( bucket_id = 'shared' and public.is_allowed() );
 
 -- Allowed users can upload to the bucket.
 create policy "allowed upload shared files"
   on storage.objects for insert
   to authenticated
-  with check (
-    bucket_id = 'shared'
-    and exists (
-      select 1 from public.allowed_emails a
-      where a.email = auth.jwt() ->> 'email'
-    )
-  );
+  with check ( bucket_id = 'shared' and public.is_allowed() );
 
 -- Users can delete files they uploaded (path is prefixed with their user id).
 create policy "users delete own shared files"

@@ -48,9 +48,14 @@ invite allowlist, the security rules that keep it private, and turns on
 **Realtime** so a shared item shows up on every device the instant it's sent
 (no refresh, no waiting).
 
-> Already ran an older version of this SQL? Just run this one line to add
-> realtime to your existing setup:
-> `alter publication supabase_realtime add table public.items;`
+> Already ran an older version of this SQL? Just re-run the whole file — every
+> statement is safe to run again. Two things it fixes:
+> - realtime: `alter publication supabase_realtime add table public.items;`
+> - sending/uploading failing with *"new row violates row-level security
+>   policy"*. The security rules need to check the invite allowlist, but a
+>   rule's sub-query runs as the signed-in user, who can't read that locked
+>   table — so the check silently failed and blocked everyone. It now goes
+>   through the `is_allowed()` helper instead, which can read it safely.
 
 ## Step 2 — Invite people
 
