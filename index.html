@@ -92,6 +92,8 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);
 .avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#0B0D14;flex:none}
 .icon-btn{background:var(--panel-2);border:1px solid var(--border);color:var(--muted);width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-sm)}
 .icon-btn:hover{border-color:var(--accent);color:var(--text)}
+.icon-btn.spinning svg{animation:spin .7s linear infinite}
+.icon-btn.spinning{color:var(--accent);border-color:var(--accent)}
 .ghost{background:var(--panel-2);border:1px solid var(--border);color:var(--text);padding:8px 13px;display:flex;align-items:center;gap:7px;font-size:13px}
 .ghost:hover{border-color:var(--accent)}
 
@@ -255,6 +257,15 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);
 @keyframes spin{to{transform:rotate(360deg)}}
 .transcribe-err{color:var(--danger);font-size:12.5px;margin-top:9px}
 
+/* ---- paging: keep the home list short ---- */
+.more-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;padding:13px 16px;background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);flex-wrap:wrap}
+.more-bar .shown{color:var(--muted-2);font-size:12.5px}
+.more-bar .btns{display:flex;gap:8px;flex-wrap:wrap}
+.more-bar button{background:var(--panel-2);border:1px solid var(--border);color:var(--text);padding:8px 14px;font-size:13px;display:flex;align-items:center;gap:7px}
+.more-bar button:hover{border-color:var(--accent);color:var(--accent)}
+.more-bar button.primary-more{background:var(--accent-soft);border-color:rgba(110,168,254,.35);color:var(--accent);font-weight:600}
+.more-bar svg{width:14px;height:14px}
+
 .empty{display:flex;flex-direction:column;align-items:center;gap:10px;color:var(--muted);padding:56px 20px;text-align:center}
 .empty svg{color:var(--muted-2)}
 .empty b{color:var(--text)}
@@ -349,6 +360,8 @@ let searchQuery = "";
 let profiles = [];        // everyone in the space, for tagging
 let me = null;            // my own profile row
 let scope = "all";        // 'all' | 'forme' | 'mine'
+const PAGE_SIZE = 12;     // how many rows the list shows before "show more"
+let visibleCount = PAGE_SIZE;
 let closeTagSuggest = null;
 // Registered once, rather than per render, so re-rendering can't pile up
 // stale listeners.
@@ -412,6 +425,7 @@ const ICON = {
   folder:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/></svg>',
   chevron:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>',
   caret:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>',
+  refresh:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>',
   globe:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg>',
   at:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8"/></svg>',
   lock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
@@ -706,6 +720,7 @@ function renderApp(){
       </div>
       <div class="topbar-right">
         <span class="who"><span class="avatar" style="${avatarStyle(email)}">${initials(email)}</span><span class="who-email">${esc(email)}</span></span>
+        <button class="icon-btn" id="refresh" title="Check for new items">${ICON.refresh}</button>
         <button class="icon-btn" id="signout" title="${DEMO?'Reset demo data':'Sign out'}">${DEMO?ICON.trash:ICON.logout}</button>
       </div>
     </div>
@@ -774,6 +789,9 @@ function renderApp(){
   </div>`);
   root.appendChild(shell);
 
+  const refreshBtn = shell.querySelector("#refresh");
+  refreshBtn.onclick = ()=>refreshNow(refreshBtn);
+
   shell.querySelector("#signout").onclick = ()=>{
     if(DEMO){ if(confirm("Reset all sample data in this browser?")) DemoBackend.resetDemo(); }
     else Backend.signOut();
@@ -787,10 +805,11 @@ function renderApp(){
   clearBtn.classList.toggle("hidden", !searchQuery);
   searchEl.addEventListener("input", ()=>{
     searchQuery = searchEl.value;
+    visibleCount = PAGE_SIZE;
     clearBtn.classList.toggle("hidden", !searchQuery);
     paintItems();
   });
-  clearBtn.onclick = ()=>{ searchQuery=""; searchEl.value=""; clearBtn.classList.add("hidden"); searchEl.focus(); paintItems(); };
+  clearBtn.onclick = ()=>{ searchQuery=""; searchEl.value=""; visibleCount = PAGE_SIZE; clearBtn.classList.add("hidden"); searchEl.focus(); paintItems(); };
 
   // ---------- who is this for? ----------
   let visibility = "everyone";
@@ -887,6 +906,7 @@ function renderApp(){
     b.classList.toggle("active", b.dataset.s===scope);
     b.onclick = ()=>{
       scope = b.dataset.s;
+      visibleCount = PAGE_SIZE;
       scopeWrap.querySelectorAll("button").forEach(x=>x.classList.toggle("active", x===b));
       paintTabs(); paintItems();
     };
@@ -1034,7 +1054,7 @@ function paintTabs(){
     const btn = h(`<button class="tab ${active?'active':''}" style="--tab-accent:${s.color}">
       <span class="tab-icon">${ICON[c.key]||ICON.other}</span>${c.label}<span class="count ${n>0?'has':''}">${n}</span>
     </button>`);
-    btn.onclick = ()=>{ if(activeCat===c.key) return; activeCat=c.key; paintTabs(); paintItems(); };
+    btn.onclick = ()=>{ if(activeCat===c.key) return; activeCat=c.key; visibleCount = PAGE_SIZE; paintTabs(); paintItems(); };
     tabsEl.appendChild(btn);
   });
   positionIndicator();
@@ -1091,17 +1111,52 @@ function paintItems(){
     empty.classList.add("hidden");
   }
 
+  // Build the rows first (a folder counts as one row, not one per file),
+  // then only render the first pageful so the page stays short.
+  const rows = [];
   const renderedFolders = new Set();
   list.forEach(it=>{
     if(it.folder){
       if(renderedFolders.has(it.folder)) return;
       renderedFolders.add(it.folder);
-      const groupItems = list.filter(x=>x.folder===it.folder);
-      wrap.appendChild(folderNode(it.folder, groupItems));
+      rows.push({folder:it.folder, group:list.filter(x=>x.folder===it.folder)});
     } else {
-      wrap.appendChild(itemNode(it));
+      rows.push({it});
     }
   });
+
+  const shown = Math.min(visibleCount, rows.length);
+  rows.slice(0, shown).forEach(r=>{
+    wrap.appendChild(r.folder ? folderNode(r.folder, r.group) : itemNode(r.it));
+  });
+
+  if(rows.length > shown){
+    const bar = h(`<div class="more-bar">
+      <span class="shown">Showing ${shown} of ${rows.length}</span>
+      <span class="btns"></span>
+    </div>`);
+    const btns = bar.querySelector(".btns");
+
+    const more = h(`<button class="primary-more">${ICON.caret}Show ${Math.min(PAGE_SIZE, rows.length-shown)} more</button>`);
+    more.onclick = ()=>{ visibleCount += PAGE_SIZE; paintItems(); };
+    btns.appendChild(more);
+
+    const all = h(`<button>Show all ${rows.length}</button>`);
+    all.onclick = ()=>{ visibleCount = Infinity; paintItems(); };
+    btns.appendChild(all);
+
+    wrap.appendChild(bar);
+  } else if(rows.length > PAGE_SIZE){
+    // everything is on screen — offer a way back to a short list
+    const bar = h(`<div class="more-bar">
+      <span class="shown">Showing all ${rows.length}</span>
+      <span class="btns"></span>
+    </div>`);
+    const less = h(`<button>Show fewer</button>`);
+    less.onclick = ()=>{ visibleCount = PAGE_SIZE; paintItems(); window.scrollTo({top:0, behavior:"smooth"}); };
+    bar.querySelector(".btns").appendChild(less);
+    wrap.appendChild(bar);
+  }
 
   refreshFolderSuggestions();
 }
@@ -1271,6 +1326,39 @@ async function loadItems(){
   paintTabs(); paintItems();
 }
 
+// Manual refresh, with a spin so it's clear something happened even when
+// nothing new came back.
+let refreshing = false;
+async function refreshNow(btn){
+  if(refreshing) return;
+  refreshing = true;
+  if(btn) btn.classList.add("spinning");
+  const started = Date.now();
+  try{
+    await loadItems();
+  }catch(e){
+    console.warn("Refresh failed:", e.message||e);
+  }finally{
+    // let the spin be visible even on a fast connection
+    const wait = Math.max(0, 450 - (Date.now() - started));
+    setTimeout(()=>{ if(btn) btn.classList.remove("spinning"); refreshing = false; }, wait);
+  }
+}
+
+// An installed app gets suspended when you switch away, and the realtime
+// socket usually dies with it — so pull fresh items whenever we come back,
+// and restart the live connection.
+function watchForResume(){
+  const resume = ()=>{
+    if(document.visibilityState !== "visible" || !session) return;
+    refreshNow(document.getElementById("refresh"));
+    if(realtimeStarted){ stopRealtime(); startRealtime(); }
+  };
+  document.addEventListener("visibilitychange", resume);
+  window.addEventListener("online", resume);
+  window.addEventListener("focus", resume);
+}
+
 // ---------- realtime ----------
 let realtimeStarted = false;
 function startRealtime(){
@@ -1298,6 +1386,7 @@ async function loadPeople(){
 
 // ---------- boot ----------
 async function boot(){
+  watchForResume();
   session = await Backend.getSession();
   if(session) await loadPeople();
   render();
