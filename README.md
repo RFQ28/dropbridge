@@ -90,15 +90,29 @@ even if they have the link.
 **Test locally first:** just double-click `index.html`. Create your account
 (the email must be on the allowlist), sign in, try sending text and a file.
 
-**To reach it from your phone and anywhere, host it** (pick one — all free):
+**To reach it from your phone and anywhere, host it.** All free:
 
-- **Netlify Drop** (easiest): go to app.netlify.com/drop and drag the
-  **whole folder** onto the page (not just `index.html` — the icons,
-  `manifest.webmanifest` and `sw.js` need to come along for the phone
-  install to work). You get a public URL instantly.
-- **Vercel:** import the folder, deploy. Static, no config.
-- **GitHub Pages:** push the folder to a repo, enable Pages.
-- **Supabase Storage:** you can also drop the HTML in a public bucket.
+### Vercel (recommended — gives you a short URL)
+
+1. Go to [vercel.com/new](https://vercel.com/new) and import this GitHub repo.
+2. **Project Name:** type `dropbridge`. This is what your URL becomes, so
+   keep it short — you'll get `dropbridge.vercel.app`.
+3. Leave every other setting alone (no build command, no framework — it's
+   a static file) and click **Deploy**.
+
+Use the **production** URL (`dropbridge.vercel.app`), not the long
+per-deploy preview links — those have a random hash in them by design.
+
+Every push to `main` redeploys automatically. `vercel.json` is already set
+up so the app and its service worker never serve stale after a redeploy.
+
+### Other options
+
+- **Netlify Drop:** drag the **whole folder** to app.netlify.com/drop
+  (not just `index.html` — the icons, `manifest.webmanifest` and `sw.js`
+  must come too, or the phone install won't work).
+- **GitHub Pages:** enable Pages on the repo.
+- **Supabase Storage:** drop the files in a public bucket.
 
 Then open that URL on your phone, your Mac, your Windows laptop — sign in,
 same shared space everywhere.

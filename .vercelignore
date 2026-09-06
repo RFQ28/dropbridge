@@ -1,0 +1,5 @@
+# Nothing here needs to be served to visitors.
+# (It all still lives in the GitHub repo — this only trims the deploy.)
+web/
+supabase/
+README.md

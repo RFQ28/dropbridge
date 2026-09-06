@@ -2,7 +2,7 @@
   "name": "DropBridge",
   "short_name": "DropBridge",
   "description": "A private shared space for text, code, docs, images and audio across your devices.",
-  "start_url": "./index.html",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait-primary",
