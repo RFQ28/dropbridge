@@ -1,7 +1,8 @@
 // DropBridge service worker — just enough to make the app installable
 // and to survive a flaky connection. It deliberately does NOT cache your
 // shared items: those must always come fresh from Supabase.
-const CACHE = "dropbridge-shell-v1";
+// Bumping this name drops every older cache on activate.
+const CACHE = "dropbridge-shell-v2";
 const SHELL = [
   "./",
   "./index.html",

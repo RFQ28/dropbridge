@@ -94,8 +94,10 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);
 .avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#0B0D14;flex:none}
 .icon-btn{background:var(--panel-2);border:1px solid var(--border);color:var(--muted);width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-sm)}
 .icon-btn:hover{border-color:var(--accent);color:var(--text)}
-.icon-btn.spinning svg{animation:spin .7s linear infinite}
-.icon-btn.spinning{color:var(--accent);border-color:var(--accent)}
+/* The refresh control: labelled, so it never reads as a mystery square. */
+#refresh svg{flex:none}
+#refresh.spinning svg{animation:spin .7s linear infinite}
+#refresh.spinning{color:var(--accent);border-color:var(--accent)}
 .ghost{background:var(--panel-2);border:1px solid var(--border);color:var(--text);padding:8px 13px;display:flex;align-items:center;gap:7px;font-size:13px}
 .ghost:hover{border-color:var(--accent)}
 
@@ -722,7 +724,7 @@ function renderApp(){
       </div>
       <div class="topbar-right">
         <span class="who"><span class="avatar" style="${avatarStyle(email)}">${initials(email)}</span><span class="who-email">${esc(email)}</span></span>
-        <button class="icon-btn" id="refresh" title="Check for new items">${ICON.refresh}</button>
+        <button class="ghost" id="refresh" title="Check for new items">${ICON.refresh}<span>Refresh</span></button>
         <button class="icon-btn" id="signout" title="${DEMO?'Reset demo data':'Sign out'}">${DEMO?ICON.trash:ICON.logout}</button>
       </div>
     </div>
@@ -1411,7 +1413,26 @@ boot();
 // to register against, and that's fine: the app still works.
 if("serviceWorker" in navigator && location.protocol.startsWith("http")){
   window.addEventListener("load", ()=>{
-    navigator.serviceWorker.register("sw.js").catch(()=>{ /* not fatal */ });
+    // updateViaCache:'none' — never let the HTTP cache answer the "is there
+    // a new worker?" check, or an installed app can stay on an old build.
+    navigator.serviceWorker.register("sw.js", {updateViaCache:"none"})
+      .then((reg)=>{
+        reg.addEventListener("updatefound", ()=>{
+          const fresh = reg.installing;
+          if(!fresh) return;
+          fresh.addEventListener("statechange", ()=>{
+            // A new version took over an app that was already running.
+            if(fresh.state === "activated" && navigator.serviceWorker.controller){
+              location.reload();
+            }
+          });
+        });
+        // Check again whenever we come back to the app.
+        document.addEventListener("visibilitychange", ()=>{
+          if(document.visibilityState === "visible") reg.update().catch(()=>{});
+        });
+      })
+      .catch(()=>{ /* not fatal */ });
   });
 }
 </script>
