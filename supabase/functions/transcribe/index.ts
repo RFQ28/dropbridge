@@ -46,7 +46,8 @@ Deno.serve(async (req) => {
   // apply here exactly like they do everywhere else.
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_ANON_KEY")!,
+    // Older projects expose the anon key under one name, newer ones the other.
+    (Deno.env.get("SUPABASE_ANON_KEY") ?? Deno.env.get("SUPABASE_PUBLISHABLE_KEY"))!,
     { global: { headers: { Authorization: authHeader } } },
   );
 
