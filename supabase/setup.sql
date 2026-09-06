@@ -56,11 +56,22 @@ create table if not exists public.items (
   size bigint,
   mime text,
   folder text,                   -- optional folder name; items sharing one stack together in the UI
+  transcript text,               -- text of a voice note, filled in by the 'transcribe' function
   created_at timestamptz default now()
 );
 
--- Already ran an older version of this table? Add the new column:
+-- Already ran an older version of this table? Add the newer columns:
 alter table public.items add column if not exists folder text;
+alter table public.items add column if not exists transcript text;
+
+-- Let people save a transcript onto an item (their own, or one someone
+-- else shared — transcribing is a favour to everyone in the space).
+drop policy if exists "allowed users update items" on public.items;
+create policy "allowed users update items"
+  on public.items for update
+  to authenticated
+  using ( public.is_allowed() )
+  with check ( public.is_allowed() );
 
 alter table public.items enable row level security;
 

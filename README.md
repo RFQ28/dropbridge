@@ -6,7 +6,8 @@ emails you allow can sign in. Built on Supabase (auth + database + file
 storage), frontend is a single HTML file with no build step.
 
 Files auto-sort into tabs: **Text · Code · Docs · Images · Audio · Other**,
-and everything is searchable by name, contents, or who sent it.
+and everything is searchable by name, contents, or who sent it. Drop a voice
+note and it comes back as text you can copy (optional — see below).
 
 ## Try it instantly — no setup required
 
@@ -100,6 +101,45 @@ even if they have the link.
 
 Then open that URL on your phone, your Mac, your Windows laptop — sign in,
 same shared space everywhere.
+
+---
+
+## Optional — voice notes and YouTube links as text
+
+Drop a voice note and it comes back as text you can copy straight into a
+chat or an agent. Paste a YouTube link into the composer and it saves the
+video's transcript instead of a bare URL. Everything else works without
+this; skip it if you don't need it.
+
+Transcription runs through a small Supabase function so the API key stays
+on the server — **never put the key in `index.html`**, that file is public.
+
+**1. Get a free Groq key** — sign up at [console.groq.com](https://console.groq.com),
+create an API key. Groq hosts Whisper and has a free tier.
+
+**2. Install the Supabase CLI** (once): see
+[the install guide](https://supabase.com/docs/guides/local-development).
+
+**3. Deploy the function and set the key:**
+
+```bash
+supabase login
+supabase link --project-ref YOUR_PROJECT_REF
+supabase secrets set GROQ_API_KEY=your_groq_key_here
+supabase functions deploy transcribe
+```
+
+Your project ref is the string in your dashboard URL:
+`supabase.com/dashboard/project/<THIS_PART>`.
+
+That's it — drop an `.m4a`/`.mp3`/voice note and the transcript appears
+underneath it with a **Copy transcript** button. Transcripts are searchable
+from the top bar too, so you can find a voice note by something said in it.
+
+Notes:
+- Audio files are capped at 24MB (Groq's limit).
+- YouTube captions come from a free third-party endpoint — it only works on
+  videos that *have* captions, and it's rate-limited for casual use.
 
 ---
 

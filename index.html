@@ -184,6 +184,18 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);
 .item-actions .del:hover{color:var(--danger)}
 .demo-limit{color:var(--muted-2);font-size:12px;font-style:italic;margin-top:8px}
 
+/* ---- voice-note transcripts ---- */
+.transcript{margin-top:10px;background:var(--bg);border:1px solid var(--border);border-left:2px solid var(--accent);border-radius:8px;padding:11px 13px}
+.transcript-label{display:flex;align-items:center;gap:6px;color:var(--accent);font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-bottom:7px}
+.transcript-label svg{width:13px;height:13px}
+.transcript-text{white-space:pre-wrap;word-break:break-word;font-size:13.5px;line-height:1.6;color:var(--text);margin:0}
+.transcript-text mark{background:var(--accent);color:var(--accent-ink);border-radius:2px}
+.transcript.clamped .transcript-text{max-height:8.6em;overflow:hidden;position:relative}
+.transcribing{display:flex;align-items:center;gap:8px;color:var(--accent);font-size:12.5px;margin-top:9px}
+.spinner{width:13px;height:13px;border:2px solid var(--accent-soft);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;flex:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+.transcribe-err{color:var(--danger);font-size:12.5px;margin-top:9px}
+
 .empty{display:flex;flex-direction:column;align-items:center;gap:10px;color:var(--muted);padding:56px 20px;text-align:center}
 .empty svg{color:var(--muted-2)}
 .empty b{color:var(--text)}
@@ -367,6 +379,16 @@ const DemoBackend = (()=>{
       save(list);
       listeners.delete.forEach(cb=>cb(it));
     },
+    async updateItem(id, patch){
+      const list = load();
+      const it = list.find(x=>x.id===id);
+      if(it) Object.assign(it, patch);
+      save(list);
+      return it;
+    },
+    async transcribe(){
+      throw new Error("Transcription needs a real Supabase project — it isn't available in Demo Mode.");
+    },
     async fileUrl(it){ return it.dataUrl || null; },
     startRealtime(onInsert,onDelete){ listeners.insert.push(onInsert); listeners.delete.push(onDelete); },
     stopRealtime(){ listeners = {insert:[], delete:[]}; },
@@ -382,12 +404,25 @@ const SupaBackend = configured ? {
   async signOut(){ return sb.auth.signOut(); },
   async listItems(){ const {data,error} = await sb.from("items").select("*").order("created_at",{ascending:false}); if(error) throw error; return data||[]; },
   async insertItem({owner,owner_email,kind,title,content,folder}){ const {error} = await sb.from("items").insert({owner,owner_email,kind,title,content,folder:folder||null}); if(error) throw error; },
+  async updateItem(id, patch){ const {error} = await sb.from("items").update(patch).eq("id", id); if(error) throw error; },
+  async transcribe(payload){
+    const {data,error} = await sb.functions.invoke("transcribe", {body: payload});
+    if(error){
+      // The function returns a JSON body explaining what went wrong; surface that.
+      let detail = error.message || "Transcription failed.";
+      try{ const b = await error.context?.json(); if(b?.error) detail = b.error; }catch{}
+      throw new Error(detail);
+    }
+    if(data?.error) throw new Error(data.error);
+    return data?.text || "";
+  },
   async insertFile({owner,owner_email,kind,file,folder}){
     const path = owner + "/" + Date.now() + "_" + file.name.replace(/[^\w.\-]+/g,"_");
     const {error:upErr} = await sb.storage.from("shared").upload(path, file, {upsert:false});
     if(upErr) throw upErr;
-    const {error} = await sb.from("items").insert({owner,owner_email,kind,title:file.name,storage_path:path,size:file.size,mime:file.type,folder:folder||null});
+    const {data,error} = await sb.from("items").insert({owner,owner_email,kind,title:file.name,storage_path:path,size:file.size,mime:file.type,folder:folder||null}).select().single();
     if(error) throw error;
+    return data;
   },
   async deleteItem(it){
     if(it.storage_path){ await sb.storage.from("shared").remove([it.storage_path]); }
@@ -496,7 +531,7 @@ function renderApp(){
     </div>` : ""}
 
     <div class="composer">
-      <textarea id="note" placeholder="Paste or type text / code, then send…"></textarea>
+      <textarea id="note" placeholder="Paste or type text / code — or drop in a YouTube link to save its transcript…"></textarea>
       <div class="composer-row">
         <div class="segmented" id="note-kind">
           <button data-v="text" class="active">Text</button>
@@ -511,7 +546,7 @@ function renderApp(){
       </div>
       <div class="dropzone" id="dz">
         ${ICON.upload}
-        <p style="margin:0">Drop a file here (any type), or</p>
+        <p style="margin:0">Drop a file here (any type) — voice notes get transcribed, or</p>
         <label class="file-btn">choose a file<input id="file" type="file" hidden></label>
         <div class="status" id="status"></div>
       </div>
@@ -578,14 +613,31 @@ function renderApp(){
   sendBtn.onclick = async ()=>{
     const content = noteEl.value.trim();
     if(!content) return;
-    const title = content.split("\n")[0].slice(0,60) + (content.length>60?"…":"");
     const folder = folderEl.value.trim() || null;
+    const status = shell.querySelector("#status");
     sendBtn.disabled = true;
     try{
-      await Backend.insertItem({owner: session.user.id, owner_email: email, kind: noteKind, title, content, folder});
+      // A bare YouTube link becomes its transcript rather than a naked URL.
+      const vid = youtubeId(content);
+      if(vid && !/\s/.test(content)){
+        status.textContent = "Fetching YouTube transcript…";
+        const text = await Backend.transcribe({youtube: content});
+        const firstLine = text.split("\n").find(l=>l.trim()) || "";
+        const title = firstLine.startsWith("#")
+          ? firstLine.replace(/^#+\s*/,"").slice(0,80)
+          : "YouTube transcript · " + vid;
+        await Backend.insertItem({owner: session.user.id, owner_email: email, kind:"text", title, content: text, folder});
+        status.textContent = "Transcript saved.";
+        setTimeout(()=>status.textContent="", 2500);
+      } else {
+        const title = content.split("\n")[0].slice(0,60) + (content.length>60?"…":"");
+        await Backend.insertItem({owner: session.user.id, owner_email: email, kind: noteKind, title, content, folder});
+      }
       noteEl.value="";
       noteEl.style.height = "";
       await loadItems();
+    } catch(e){
+      status.textContent = "Failed: " + (e.message || e);
     } finally { sendBtn.disabled = false; }
   };
   noteEl.addEventListener("keydown",e=>{if(e.key==="Enter"&&(e.metaKey||e.ctrlKey))sendBtn.click();});
@@ -600,10 +652,26 @@ function renderApp(){
     const kind = classify(file);
     const folder = folderEl.value.trim() || null;
     try{
-      await Backend.insertFile({owner: session.user.id, owner_email: email, kind, file, folder});
+      const created = await Backend.insertFile({owner: session.user.id, owner_email: email, kind, file, folder});
       status.textContent = "Sent.";
-      setTimeout(()=>status.textContent="",1800);
       await loadItems();
+
+      // Voice notes get turned into text automatically.
+      if(kind==="audio" && created?.id && created?.storage_path){
+        status.textContent = "Transcribing voice note…";
+        try{
+          const text = await Backend.transcribe({storage_path: created.storage_path});
+          await Backend.updateItem(created.id, {transcript: text});
+          const row = items.find(x=>x.id===created.id);
+          if(row) row.transcript = text;
+          paintItems();
+          status.textContent = "Transcript ready.";
+        }catch(e){
+          status.textContent = "Sent, but transcription failed: " + (e.message||e);
+          return;
+        }
+      }
+      setTimeout(()=>status.textContent="",2500);
     }catch(e){ status.textContent = "Upload failed: "+(e.message||e); }
   }
   fileEl.onchange = ()=>{ if(fileEl.files[0]) upload(fileEl.files[0]); fileEl.value=""; };
@@ -620,6 +688,7 @@ function matchesSearch(it, q){
   q = q.toLowerCase();
   return (it.title||"").toLowerCase().includes(q) ||
          (it.content||"").toLowerCase().includes(q) ||
+         (it.transcript||"").toLowerCase().includes(q) ||
          (it.owner_email||"").toLowerCase().includes(q) ||
          (it.folder||"").toLowerCase().includes(q);
 }
@@ -734,6 +803,36 @@ function refreshFolderSuggestions(){
   dl.innerHTML = names.map(n=>`<option value="${esc(n)}">`).join("");
 }
 
+// Recognises the usual YouTube link shapes; returns the 11-char video id.
+function youtubeId(url){
+  const m = (url||"").match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([\w-]{11})/);
+  return m ? m[1] : null;
+}
+
+function transcriptBlock(it){
+  const box = h(`<div class="transcript"></div>`);
+  box.appendChild(h(`<div class="transcript-label">${ICON.audio}Transcript</div>`));
+  box.appendChild(h(`<p class="transcript-text">${highlight(it.transcript||"", searchQuery)}</p>`));
+  return box;
+}
+
+async function runTranscribe(it, node){
+  const body = node.querySelector(".item-body");
+  node.querySelectorAll(".transcribing,.transcribe-err").forEach(el=>el.remove());
+  const status = h(`<div class="transcribing"><span class="spinner"></span>Transcribing…</div>`);
+  body.appendChild(status);
+  try{
+    const text = await Backend.transcribe({storage_path: it.storage_path});
+    await Backend.updateItem(it.id, {transcript: text});
+    const row = items.find(x=>x.id===it.id);
+    if(row) row.transcript = text;
+    paintItems();
+  }catch(e){
+    status.remove();
+    body.appendChild(h(`<p class="transcribe-err">${esc(e.message||"Transcription failed.")}</p>`));
+  }
+}
+
 function itemNode(it){
   const mine = session && it.owner === session.user.id;
   const node = h(`<div class="item"></div>`);
@@ -768,6 +867,10 @@ function itemNode(it){
     body.appendChild(h(`<p class="demo-limit">Preview/download isn't available for this sample file in Demo Mode.</p>`));
   }
 
+  if(it.kind==="audio" && it.transcript){
+    body.appendChild(transcriptBlock(it));
+  }
+
   const meta = h(`<p class="item-meta"></p>`);
   meta.appendChild(h(`<span class="owner">${esc(it.owner_email||"")}</span>`));
   meta.appendChild(h(`<span class="sep">·</span>`));
@@ -785,6 +888,22 @@ function itemNode(it){
     const dl = h(`<button>${ICON.download}Download</button>`);
     dl.onclick = async ()=>{ const u=await Backend.fileUrl(it, true); if(u) window.open(u,"_blank"); };
     actions.appendChild(dl);
+  }
+
+  if(it.kind==="audio"){
+    if(it.transcript){
+      const ct = h(`<button>${ICON.copy}Copy transcript</button>`);
+      ct.onclick = ()=>{
+        navigator.clipboard.writeText(it.transcript||"");
+        ct.innerHTML = ICON.check+"Copied";
+        setTimeout(()=>ct.innerHTML = ICON.copy+"Copy transcript", 1200);
+      };
+      actions.appendChild(ct);
+    } else if(!it.demoNoContent){
+      const tr = h(`<button>${ICON.spark}Transcribe</button>`);
+      tr.onclick = ()=>runTranscribe(it, node);
+      actions.appendChild(tr);
+    }
   }
   if(mine){ const del=h(`<button class="del">${ICON.trash}Remove</button>`); del.onclick=()=>removeItem(it); actions.appendChild(del); }
   body.appendChild(actions);
