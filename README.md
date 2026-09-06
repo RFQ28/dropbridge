@@ -104,42 +104,82 @@ same shared space everywhere.
 
 ---
 
-## Optional — voice notes and YouTube links as text
+## Optional — turn voice notes into text
 
-Drop a voice note and it comes back as text you can copy straight into a
-chat or an agent. Paste a YouTube link into the composer and it saves the
-video's transcript instead of a bare URL. Everything else works without
-this; skip it if you don't need it.
+Drop a voice note → get the words as text, with a **Copy transcript**
+button. Paste a YouTube link → get the video's transcript.
 
-Transcription runs through a small Supabase function so the API key stays
-on the server — **never put the key in `index.html`**, that file is public.
+Everything else in the app works without this. Skip it if you don't want it.
 
-**1. Get a free Groq key** — sign up at [console.groq.com](https://console.groq.com),
-create an API key. Groq hosts Whisper and has a free tier.
+Setup is **4 steps, all in your browser.** No command line, no installing
+anything. About 5 minutes, once.
 
-**2. Install the Supabase CLI** (once): see
-[the install guide](https://supabase.com/docs/guides/local-development).
+### Step 1 — Get a free key from Groq
 
-**3. Deploy the function and set the key:**
+Groq is the service that turns speech into text. It's free to start.
+
+1. Go to **console.groq.com** and sign up.
+2. In the left sidebar click **API Keys**.
+3. Click **Create API Key**, give it any name, click submit.
+4. **Copy the key** and paste it somewhere temporary (like Notepad) —
+   Groq only shows it to you once.
+
+> ⚠️ Do **not** put this key in `index.html`. That file is public — anyone
+> visiting your site could read it and run up your bill. In Step 3 you give
+> it to Supabase instead, where it stays hidden on the server.
+
+### Step 2 — Update your database
+
+1. Supabase dashboard → **SQL Editor** (left sidebar) → **New query**.
+2. Open the file `supabase/setup.sql` from this project, select all, copy.
+3. Paste it into the box and click **Run**.
+
+Safe to run even if you've run it before — it only adds what's missing.
+
+### Step 3 — Give Supabase your Groq key
+
+1. Supabase dashboard → **Edge Functions** (left sidebar).
+2. Open the **Secrets** tab.
+3. Click **Add new secret** and enter:
+   - Name: `GROQ_API_KEY`
+   - Value: the key you copied in Step 1
+4. Save.
+
+### Step 4 — Create the function
+
+1. Still in **Edge Functions**, click **Deploy a new function** →
+   choose **Via Editor**.
+2. Name it exactly: `transcribe` (lowercase, no spaces).
+3. Delete the sample code that's already in the editor.
+4. Open the file `supabase/functions/transcribe/index.ts` from this
+   project, select all, copy, and paste it into the editor.
+5. Click **Deploy**.
+
+### That's it
+
+Refresh the app and drop in a voice note. You'll see *"Transcribing voice
+note…"*, then the text appears underneath with a **Copy transcript**
+button. Search finds words inside transcripts too, so you can track down a
+voice note by something that was said in it.
+
+**Good to know:**
+- Voice notes must be under 24MB (that's Groq's limit).
+- YouTube only works on videos that already have captions.
+- Already-shared voice notes get a **Transcribe** button you can click.
+
+<details>
+<summary>Prefer the command line? (optional alternative to steps 3 & 4)</summary>
 
 ```bash
-supabase login
-supabase link --project-ref YOUR_PROJECT_REF
-supabase secrets set GROQ_API_KEY=your_groq_key_here
-supabase functions deploy transcribe
+npx supabase login
+npx supabase link --project-ref YOUR_PROJECT_REF
+npx supabase secrets set GROQ_API_KEY=your_key_here
+npx supabase functions deploy transcribe
 ```
 
-Your project ref is the string in your dashboard URL:
-`supabase.com/dashboard/project/<THIS_PART>`.
-
-That's it — drop an `.m4a`/`.mp3`/voice note and the transcript appears
-underneath it with a **Copy transcript** button. Transcripts are searchable
-from the top bar too, so you can find a voice note by something said in it.
-
-Notes:
-- Audio files are capped at 24MB (Groq's limit).
-- YouTube captions come from a free third-party endpoint — it only works on
-  videos that *have* captions, and it's rate-limited for casual use.
+Your project ref is the code in your dashboard URL:
+`supabase.com/dashboard/project/`**`this-part-here`**
+</details>
 
 ---
 
