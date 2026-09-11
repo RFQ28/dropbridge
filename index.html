@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>DropBridge</title>
 
 <!-- Installable on a phone home screen; runs full-screen like an app.
@@ -29,8 +29,7 @@
   --shadow:0 8px 24px -12px rgba(0,0,0,.5);
 }
 *{box-sizing:border-box}
-/* Behave like an app, not a web page: no pinch or double-tap zoom, and no
-   tap delay. The viewport meta blocks pinch; this kills double-tap. */
+/* Keep touch interaction responsive while allowing browser zoom. */
 html,body{margin:0;height:100%;-webkit-text-size-adjust:100%;touch-action:manipulation}
 body{background:
     radial-gradient(1200px 600px at 15% -10%, rgba(110,168,254,.05), transparent 60%),
@@ -311,6 +310,121 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);
 @media (display-mode:standalone){
   body{overscroll-behavior-y:none}
 }
+/* Responsive workspace: compose alongside the library on large screens. */
+:root{--bg:#101319;--panel:#191e27;--panel-2:#222a36;--border:#303a49;--border-soft:#252e3b;--muted:#a4afbf;--muted-2:#909daf;--radius:16px}
+body{font-size:16px}
+.shell{max-width:none;padding:24px clamp(16px,3vw,56px) 48px}
+.topbar{margin:-24px calc(-1 * clamp(16px,3vw,56px)) 28px;padding:18px clamp(16px,3vw,56px);gap:24px}
+.topbar-left{flex:1;flex-wrap:nowrap;gap:clamp(24px,4vw,72px);min-width:0}
+.brand{white-space:nowrap;letter-spacing:-.04em}
+.brand .dot{width:12px;height:20px;border-radius:4px;box-shadow:6px -4px 0 -1px #91bcff}
+.searchbox{width:min(480px,100%);max-width:none;min-width:120px}
+.searchbox input{min-height:44px;font-size:14px}
+.topbar-right{min-width:0}.who-email{max-width:180px}
+.icon-btn{width:44px;height:44px;flex:none}.ghost{min-height:44px}
+.workspace-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:24px}
+.workspace-heading h2{font-size:clamp(24px,2.2vw,34px);letter-spacing:-.045em;margin:0;font-weight:650}
+.workspace-heading p{color:var(--muted);font-size:14px;margin:4px 0 0}
+.workspace{display:grid;grid-template-columns:minmax(310px,360px) minmax(0,1fr);align-items:start;gap:28px}
+.composer{margin:0;padding:22px;position:sticky;top:104px;min-width:0;box-shadow:0 10px 36px #00000018}
+.composer-heading{margin:0 0 18px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.composer-heading h3,.library-heading{font-size:17px;font-weight:600;letter-spacing:-.02em;margin:0}
+.composer-heading svg{color:var(--accent)}
+.field-label{margin:18px 0 8px;font-size:14px;color:var(--muted);font-weight:500}
+.composer textarea{min-height:150px;font-size:16px;padding:14px}
+.composer-row{justify-content:space-between}.composer-row .primary{min-height:44px;justify-content:center}
+.hint{width:100%;margin:0;font-size:12px}.segmented button{min-height:36px;font-size:14px}
+.share-row{margin-top:0}.vis{width:100%}.vis button{flex:1;justify-content:center;padding:8px 5px;min-height:40px}
+.folder-field{width:100%;min-height:44px;margin:0}.folder-field input{font-size:14px;min-width:0}
+.dropzone{padding:22px 12px;margin-top:20px;background:var(--bg)}
+.file-btn{margin:0;min-height:44px;display:inline-flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer}
+.file-btn:focus-within{outline:2px solid var(--accent);outline-offset:3px}
+.file-input{position:absolute;width:1px;height:1px;padding:0;opacity:0;overflow:hidden}
+.library{min-width:0}.library-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+.scope-row{margin:0}.scope button{min-height:38px;font-size:14px}
+.tabs-row{margin-bottom:20px;gap:10px}.tabs-scroll{margin:0;padding:0 0 4px}
+.tabs{background:transparent;border:0;border-radius:0;padding:0;gap:6px}
+.tab{padding:8px 12px;border-radius:10px;font-size:14px;min-height:44px;gap:6px}
+.tab:hover{background:var(--panel)}.tab.active{background:var(--accent-soft);border-color:#6ea8fe40;color:var(--accent)}
+.tab-icon{width:20px;height:20px;border-radius:0}.tab.active .tab-icon{background:none;box-shadow:none;color:inherit;transform:none}
+.tab.active .tab-icon path,.tab.active .tab-icon circle,.tab.active .tab-icon rect{animation:none}
+.tab-indicator{display:none}.tab .count{opacity:1;color:var(--muted);font-size:12px}
+.result-count{white-space:normal;overflow-wrap:anywhere;width:100%;font-size:13px}
+.items{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));align-items:start;gap:16px}
+.item{padding:20px;min-width:0}.item-title{font-size:16px;word-break:normal;overflow-wrap:anywhere}
+.item-text,.transcript-text{font-size:15px}.item-text.code{font-size:13px}
+.item-actions{gap:8px;flex-wrap:wrap}.item-actions button{font-size:14px;min-height:40px;padding:6px 9px;border-radius:8px;background:var(--panel-2)}
+.item-meta{font-size:12px}.folder-name{font-size:15px}.folder-head{min-height:64px}
+.folder-body .item{padding:14px}.folder-group,.more-bar{grid-column:1/-1;min-width:0}
+audio,video{max-width:100%}.empty{background:var(--panel);border:1px dashed var(--border);border-radius:var(--radius)}
+button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.compose-toggle{display:none}
+@media(min-width:1001px){.composer-content{display:block!important}}
+@media(max-width:1000px){
+  .workspace{grid-template-columns:minmax(0,1fr);gap:24px}.composer{position:static;padding:18px}
+  .compose-toggle{display:flex;flex:none}.composer textarea{min-height:100px}.composer-heading{margin-bottom:12px}
+  .composer-content[hidden]{display:none}.who-email{display:none}.topbar-left{gap:24px}
+  .workspace-heading{margin-bottom:18px}.hint{display:none}
+  .composer.is-collapsed{display:none}
+}
+@media(max-width:640px){
+  .shell{padding:16px 12px calc(24px + env(safe-area-inset-bottom));min-width:0}
+  .topbar{position:relative;top:auto;margin:-16px -12px 20px;padding:calc(12px + env(safe-area-inset-top)) 12px 14px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px}
+  .topbar-left{display:contents}.brand{font-size:20px;grid-column:1;grid-row:1;min-width:0;gap:8px}
+  .brand-badge{font-size:10px;padding:2px 5px}
+  .topbar-right{width:auto;grid-column:2;grid-row:1;gap:6px}.topbar-right .who{display:none}
+  #refresh{width:44px;padding:0;justify-content:center}#refresh span{display:none}
+  .searchbox{grid-row:2;grid-column:1/-1;width:100%}.searchbox input{font-size:16px}
+  .searchbox .clear{min-width:36px;min-height:36px;display:flex;align-items:center;justify-content:center}
+  .workspace-heading{align-items:center;gap:10px;margin-bottom:20px}.workspace-heading>div{min-width:0}
+  .workspace-heading h2{font-size:23px}.workspace-heading p{display:none}
+  .compose-toggle{font-size:14px;padding:10px 14px;background:var(--accent);color:var(--accent-ink);border-color:transparent;font-weight:600;white-space:nowrap}
+  .workspace{gap:18px}.composer{padding:16px}.composer-heading{margin-bottom:14px}
+  .composer-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.segmented{width:100%}.segmented button{flex:1;min-height:38px;padding:6px}
+  .composer-row .primary{width:100%;margin:0}.composer textarea{min-height:120px}
+  .vis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px}.vis button{min-width:0;min-height:44px;gap:4px;padding:6px 2px;font-size:12px}.vis svg{display:none}
+  .library-toolbar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;margin-bottom:12px}.library-heading{font-size:16px}
+  #select-items{font-size:13px;padding:8px 10px}.scope-row{grid-column:1/-1}.scope-row,.scope{width:100%;min-width:0}
+  .scope{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}.scope button{min-width:0;justify-content:center;padding:8px 3px;font-size:13px;min-height:44px;gap:4px}.scope svg{display:none}
+  .tabs-row{margin-bottom:14px}.tabs-scroll{overflow:visible;flex-basis:100%;padding:0}
+  .tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));width:100%;gap:4px}
+  .tab{min-width:0;justify-content:center;padding:7px 3px;font-size:13px;gap:4px;border-radius:8px;background:var(--panel)}.tab-icon{display:none}.tab .count{font-size:11px}
+  .items{grid-template-columns:minmax(0,1fr);gap:12px}
+  .item{position:relative;display:block;padding:16px}.item>.item-icon{position:absolute;right:14px;top:14px;width:28px;height:28px;border-radius:8px}.item>.item-icon svg{width:16px;height:16px}
+  .item-body{width:100%;min-width:0}.item-head{gap:6px;min-height:28px;padding-right:34px;justify-content:flex-start}.item-title{font-size:15px}
+  .item-text{font-size:15px}.item-text.code{padding:10px;font-size:13px}.item-actions{gap:8px;margin-top:12px}.item-actions button{min-height:44px;padding:8px 12px;justify-content:center}
+  .item-meta{overflow-wrap:anywhere}.item-meta .owner{min-width:0;overflow-wrap:anywhere}.item-select{padding-right:34px}
+  .folder-head{padding:12px;gap:10px}.folder-body{padding:10px;gap:10px}.folder-body .item{padding:12px}.folder-name{font-size:14px}
+  .dropzone{padding:16px 12px}.file-btn{width:100%;position:relative}.dropzone>p{font-size:13px}.status:empty{display:none}
+  .folder-field input{font-size:16px}.tag-field{min-width:0;width:100%}.tag-box input{min-width:0}
+  .result-count{font-size:13px}.demo-banner{font-size:12px}.demo-banner>span>svg{display:inline-block;vertical-align:middle}
+}
+.selection-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 18px;padding:12px;background:var(--accent-soft);border:1px solid var(--border);border-radius:12px}
+.selection-bar p{width:100%;margin:0;color:var(--muted);font-size:13px}.selection-bar button:disabled{opacity:.5;cursor:default}
+.item.selected{border-color:var(--accent);background:#1c293b}.item-select{margin:0;display:flex;align-items:center;gap:8px;min-height:44px;font-size:14px;cursor:pointer}
+.item-select input{width:20px;height:20px;padding:0;accent-color:var(--accent)}
+.image-preview{display:block;background:none;padding:0;max-width:100%;text-align:left;color:var(--accent)}.image-preview span{display:block;font-size:14px;padding:8px 0}.image-preview .thumb{cursor:zoom-in}
+.app-dialog{color:var(--text);background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:24px;width:min(480px,calc(100% - 32px));max-height:90dvh;overflow:auto}
+.app-dialog::backdrop{background:rgba(0,0,0,.8);backdrop-filter:blur(5px)}.dialog-header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px}.dialog-header h2{font-size:18px;margin:0;overflow-wrap:anywhere;min-width:0}
+.image-dialog{width:calc(100% - 32px);max-width:1600px}.image-stage{overflow:auto;max-height:72dvh;text-align:center}.image-stage img{display:block;max-width:100%;max-height:70dvh;object-fit:contain;margin:auto}.image-stage.actual img{max-width:none;max-height:none;margin:0}
+.image-stage img[hidden]{display:none}
+.dialog-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}.dialog-status{color:var(--muted);font-size:14px;overflow-wrap:anywhere}
+@media(max-width:640px){
+  .selection-bar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:12px}
+  .selection-bar strong{font-size:14px}.selection-bar button{font-size:13px;justify-content:center;padding:8px}
+  #move-selected{grid-column:1/-1;grid-row:2;background:var(--accent);color:var(--accent-ink)}
+  #clear-selection{grid-column:2;grid-row:1}.selection-bar p{grid-column:1/-1;line-height:1.5}
+  .image-preview{width:100%}.image-preview .thumb{width:auto;max-width:100%;max-height:320px;object-fit:contain;margin:10px auto 0}
+  .app-dialog{width:calc(100% - 24px);max-width:none;max-height:calc(100dvh - 32px);padding:16px;border-radius:14px}
+  .dialog-header{gap:10px}.dialog-header h2{font-size:16px}.dialog-close{flex:none;padding:8px 12px}
+  .image-dialog{height:calc(100dvh - 24px);display:none;overflow:hidden}
+  .image-dialog[open]{display:flex;flex-direction:column}.image-dialog .image-stage{flex:1;min-height:0;max-height:none;display:flex;align-items:center;justify-content:center}
+  .image-dialog .image-stage img{max-height:100%;max-width:100%;width:auto;height:auto;margin:auto;object-fit:contain}
+  .image-dialog .image-stage.actual{display:block}.image-dialog .image-stage.actual img{max-width:none;max-height:none;margin:0}
+  .image-dialog .dialog-actions{flex:none;padding-bottom:env(safe-area-inset-bottom)}.image-dialog .dialog-status:empty{display:none}
+}
+@media(max-width:400px){#refresh span{display:none}#refresh{width:44px;padding:0;justify-content:center}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 </style>
 </head>
 <body>
@@ -359,6 +473,8 @@ if (configured) sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
 let session = null;
 let items = [];
+let selecting = false;
+const selectedItems = new Set();
 let activeCat = "all";
 let searchQuery = "";
 let profiles = [];        // everyone in the space, for tagging
@@ -379,7 +495,7 @@ function handleFor(id){ const p = profileFor(id); return p ? "@"+p.username : "s
 
 // ---------- helpers ----------
 function h(html){const t=document.createElement("template");t.innerHTML=html.trim();return t.content.firstChild;}
-function esc(s){return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function esc(s){return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
 function humanSize(n){if(n==null)return"";const u=["B","KB","MB","GB"];let i=0;while(n>=1024&&i<u.length-1){n/=1024;i++;}return (i===0?n:n.toFixed(1))+" "+u[i];}
 function timeAgo(ts){const d=(Date.now()-new Date(ts).getTime())/1000;if(d<5)return"just now";if(d<60)return Math.floor(d)+"s ago";if(d<3600)return Math.floor(d/60)+"m ago";if(d<86400)return Math.floor(d/3600)+"h ago";if(d<604800)return Math.floor(d/86400)+"d ago";return new Date(ts).toLocaleDateString();}
 function fullTime(ts){return new Date(ts).toLocaleString(undefined,{dateStyle:"medium",timeStyle:"short"});}
@@ -520,6 +636,13 @@ const DemoBackend = (()=>{
       save(list);
       return it;
     },
+    async moveItems(ids, folder){
+      const list = load();
+      const moved = list.filter(it=>ids.includes(it.id) && it.owner===currentUser().id);
+      moved.forEach(it=>it.folder=folder);
+      save(list);
+      return moved.map(it=>it.id);
+    },
     async setTranscript(id, text){ return this.updateItem(id, {transcript:text}); },
     async listProfiles(){ return DEMO_PROFILES.slice(); },
     async myProfile(){ return DEMO_PROFILES[0]; },
@@ -547,6 +670,11 @@ const SupaBackend = configured ? {
     if(error) throw error;
   },
   async updateItem(id, patch){ const {error} = await sb.from("items").update(patch).eq("id", id); if(error) throw error; },
+  async moveItems(ids, folder){
+    const {data,error} = await sb.from("items").update({folder}).in("id",ids).eq("owner",session.user.id).select("id");
+    if(error) throw error;
+    return (data||[]).map(it=>it.id);
+  },
   // Goes through an RPC so anyone who can see a voice note can caption it,
   // without being able to edit the rest of the row.
   async setTranscript(id, text){ const {error} = await sb.rpc("set_transcript", {item_id:id, text_in:text}); if(error) throw error; },
@@ -592,10 +720,11 @@ const SupaBackend = configured ? {
     if(error) return null;
     return data.signedUrl;
   },
-  startRealtime(onInsert,onDelete){
+  startRealtime(onInsert,onDelete,onUpdate){
     this._channel = sb.channel("items-live")
       .on("postgres_changes", {event:"INSERT", schema:"public", table:"items"}, (p)=>onInsert(p.new))
       .on("postgres_changes", {event:"DELETE", schema:"public", table:"items"}, (p)=>onDelete(p.old))
+      .on("postgres_changes", {event:"UPDATE", schema:"public", table:"items"}, (p)=>onUpdate(p.new))
       .subscribe();
   },
   stopRealtime(){ if(this._channel){ sb.removeChannel(this._channel); this._channel=null; } },
@@ -711,19 +840,22 @@ function renderAuth(){
 
 function renderApp(){
   root.innerHTML = "";
+  selecting = false;
+  selectedItems.clear();
   const email = session.user.email;
+  const username = me?.username || profileFor(session.user.id)?.username || "You";
   const shell = h(`<div class="shell">
     <div class="topbar">
       <div class="topbar-left">
         <h1 class="brand"><span class="dot"></span>DropBridge${DEMO?'<span class="brand-badge">Demo</span>':''}</h1>
         <div class="searchbox">
           ${ICON.search}
-          <input id="search" type="search" placeholder="Search files and text…" autocomplete="off">
-          <button class="clear hidden" id="clear-search">${ICON.close}</button>
+          <input id="search" type="search" aria-label="Search files and text" placeholder="Search files and text…" autocomplete="off">
+          <button class="clear hidden" id="clear-search" aria-label="Clear search">${ICON.close}</button>
         </div>
       </div>
       <div class="topbar-right">
-        <span class="who"><span class="avatar" style="${avatarStyle(email)}">${initials(email)}</span><span class="who-email">${esc(email)}</span></span>
+        <span class="who"><span class="avatar" style="${avatarStyle(username)}">${initials(username)}</span><span class="who-email">${esc(username)}</span></span>
         <button class="ghost" id="refresh" title="Check for new items">${ICON.refresh}<span>Refresh</span></button>
         <button class="icon-btn" id="signout" title="${DEMO?'Reset demo data':'Sign out'}">${DEMO?ICON.trash:ICON.logout}</button>
       </div>
@@ -734,8 +866,15 @@ function renderApp(){
       <span class="actions"><button class="mini-link" id="reset-demo">Reset sample data</button></span>
     </div>` : ""}
 
-    <div class="composer">
-      <textarea id="note" placeholder="Paste or type text / code — or drop in a YouTube link to save its transcript…"></textarea>
+    <div class="workspace-heading">
+      <div><h2>Your workspace</h2><p>Text, files and ideas. Together across devices.</p></div>
+      <button class="ghost compose-toggle" id="compose-toggle" aria-expanded="true" aria-controls="composer-content">Hide composer</button>
+    </div>
+    <div class="workspace">
+    <section class="composer" aria-labelledby="composer-title">
+      <div class="composer-heading"><h3 id="composer-title">Share something</h3>${ICON.send}</div>
+      <div class="composer-content" id="composer-content">
+      <textarea id="note" aria-label="Text or code to share" placeholder="Write a note, paste code or a YouTube link…"></textarea>
       <div class="composer-row">
         <div class="segmented" id="note-kind">
           <button data-v="text" class="active">Text</button>
@@ -744,7 +883,8 @@ function renderApp(){
         <button class="primary" id="send-note">${ICON.send} Send</button>
         <span class="hint">⌘/Ctrl + Enter to send</span>
       </div>
-      <div class="share-row">
+      <p class="field-label" id="sharing-label">Who can see this?</p>
+      <div class="share-row" role="group" aria-labelledby="sharing-label">
         <div class="vis" id="vis-pick">
           <button data-v="everyone" class="active" title="Everyone in the space can see it">${ICON.globe}Everyone</button>
           <button data-v="tagged" title="Only the people you tag">${ICON.at}Tagged only</button>
@@ -756,24 +896,31 @@ function renderApp(){
           </div>
         </div>
       </div>
+      <label class="field-label" for="folder-name">Save to folder</label>
       <div class="folder-row">
         <label class="folder-field">${ICON.folder}<input id="folder-name" list="folder-suggestions" placeholder="Folder (optional) — e.g. Launch Prep" autocomplete="off"></label>
         <datalist id="folder-suggestions"></datalist>
       </div>
       <div class="dropzone" id="dz">
         ${ICON.upload}
-        <p style="margin:0">Drop a file here (any type) — voice notes get transcribed, or</p>
-        <label class="file-btn">choose a file<input id="file" type="file" hidden></label>
-        <div class="status" id="status"></div>
+        <p style="margin:0">Drop a file here, or browse your device</p>
+        <label class="file-btn">Choose a file<input id="file" class="file-input" type="file"></label>
+        <div class="status" id="status" role="status" aria-live="polite"></div>
       </div>
-    </div>
+      </div>
+    </section>
 
+    <main class="library" aria-labelledby="library-title">
+    <div class="library-toolbar">
+    <h3 class="library-heading" id="library-title">Shared library</h3>
+    <button class="ghost" id="select-items" aria-pressed="false">Select items</button>
     <div class="scope-row">
       <div class="scope" id="scope-pick">
         <button data-s="all" class="active">${ICON.layers2}Everything</button>
         <button data-s="forme">${ICON.inbox2}For me<span class="pill hidden" id="forme-count">0</span></button>
         <button data-s="mine">${ICON.lock}Just mine</button>
       </div>
+    </div>
     </div>
     <div class="tabs-row">
       <div class="tabs-scroll">
@@ -788,10 +935,41 @@ function renderApp(){
       </div>
       <span class="result-count hidden" id="result-count"></span>
     </div>
+    <div class="selection-bar hidden" id="selection-bar">
+      <strong id="selection-count" role="status" aria-live="polite">0 selected</strong>
+      <button class="ghost" id="select-matching">Select matching</button>
+      <button class="ghost" id="move-selected" disabled>${ICON.folder}Move to folder</button>
+      <button class="ghost" id="clear-selection">Clear</button>
+      <p>Select your items to group them. Moving keeps their existing sharing permissions.</p>
+    </div>
     <div class="items" id="items"></div>
     <div class="empty hidden" id="empty"></div>
+    </main>
+    </div>
   </div>`);
   root.appendChild(shell);
+  shell.querySelector("#select-items").onclick = ()=>{
+    selecting = !selecting;
+    selectedItems.clear();
+    paintItems();
+  };
+  shell.querySelector("#clear-selection").onclick = ()=>{ selectedItems.clear(); paintItems(); };
+  shell.querySelector("#select-matching").onclick = ()=>{
+    items.filter(it=>it.owner===myId() && inScope(it) && (activeCat==="all" || it.kind===activeCat) && matchesSearch(it,searchQuery)).forEach(it=>selectedItems.add(it.id));
+    paintItems();
+  };
+  shell.querySelector("#move-selected").onclick = openMoveDialog;
+
+  const composeToggle = shell.querySelector("#compose-toggle");
+  const composeContent = shell.querySelector("#composer-content");
+  function setComposerOpen(open){
+    composeContent.hidden = !open;
+    shell.querySelector(".composer").classList.toggle("is-collapsed", !open);
+    composeToggle.setAttribute("aria-expanded", String(open));
+    composeToggle.textContent = open ? "Close" : "+ Share";
+  }
+  setComposerOpen(!window.matchMedia("(max-width:1000px)").matches);
+  composeToggle.onclick = ()=>setComposerOpen(composeContent.hidden);
 
   const refreshBtn = shell.querySelector("#refresh");
   refreshBtn.onclick = ()=>refreshNow(refreshBtn);
@@ -850,7 +1028,7 @@ function renderApp(){
       suggestBox.appendChild(h(`<div class="none">${profiles.length<=1 ? "Nobody else has signed up yet." : "No match."}</div>`));
     } else {
       list.forEach((p,i)=>{
-        const b = h(`<button class="${i===selIdx?'sel':''}">@${esc(p.username)}<span class="mail">${esc(p.email||"")}</span></button>`);
+        const b = h(`<button class="${i===selIdx?'sel':''}">@${esc(p.username)}</button>`);
         b.onclick = ()=>addTag(p.user_id);
         suggestBox.appendChild(b);
       });
@@ -1086,6 +1264,8 @@ function paintItems(){
   const empty = document.getElementById("empty");
   const resultCount = document.getElementById("result-count");
   if(!wrap) return;
+  for(const id of selectedItems){ if(!items.some(it=>it.id===id && it.owner===myId())) selectedItems.delete(id); }
+  updateSelectionBar();
   let list = items.filter(inScope);
   if(activeCat!=="all") list = list.filter(i=>i.kind===activeCat);
   list = list.filter(i=>matchesSearch(i, searchQuery));
@@ -1110,7 +1290,7 @@ function paintItems(){
     empty.classList.remove("hidden");
     empty.innerHTML = searchQuery
       ? `${ICON.search}<div><b>No matches</b><div>Try a different search term.</div></div>`
-      : `${ICON.inbox}<div><b>Nothing here yet</b><div>Send a note or drop a file above to get started.</div></div>`;
+      : `${ICON.inbox}<div><b>Nothing here yet</b><div>Use Share something to send a note or upload a file.</div></div>`;
   } else {
     empty.classList.add("hidden");
   }
@@ -1166,7 +1346,7 @@ function paintItems(){
 }
 
 function folderNode(name, groupItems){
-  const isOpen = !!searchQuery || openFolders.has(name);
+  const isOpen = selecting || !!searchQuery || openFolders.has(name);
   const wrap = h(`<div class="folder-group ${isOpen?'open':''}"></div>`);
   const head = h(`<button class="folder-head">
     <span class="folder-visual">
@@ -1229,12 +1409,130 @@ async function runTranscribe(it, node){
   }
 }
 
+function updateSelectionBar(){
+  const bar = document.getElementById("selection-bar");
+  if(!bar) return;
+  bar.classList.toggle("hidden",!selecting);
+  document.getElementById("selection-count").textContent = `${selectedItems.size} selected`;
+  document.getElementById("move-selected").disabled = !selectedItems.size;
+  const toggle = document.getElementById("select-items");
+  toggle.textContent = selecting ? "Done selecting" : "Select items";
+  toggle.setAttribute("aria-pressed",String(selecting));
+}
+
+function showAppDialog(markup){
+  const previousFocus = document.activeElement;
+  const dialog = h(markup);
+  const previousOverflow = document.body.style.overflow;
+  document.body.appendChild(dialog);
+  document.body.style.overflow = "hidden";
+  dialog.addEventListener("close",()=>{
+    dialog.remove();
+    document.body.style.overflow = previousOverflow;
+    if(previousFocus?.isConnected) previousFocus.focus();
+    else document.getElementById("select-items")?.focus();
+  },{once:true});
+  dialog.querySelector(".dialog-close").onclick = ()=>dialog.close();
+  dialog.showModal();
+  return dialog;
+}
+
+async function openImageDialog(it){
+  const dialog = showAppDialog(`<dialog class="app-dialog image-dialog" aria-labelledby="image-view-title">
+    <div class="dialog-header"><h2 id="image-view-title">${esc(it.title||"Image")}</h2><button class="ghost dialog-close" autofocus>Close</button></div>
+    <p class="dialog-status" role="status">Loading image…</p>
+    <div class="image-stage"><img alt="${esc(it.title||'Full image')}" hidden></div>
+    <div class="dialog-actions"><button class="ghost image-size" disabled aria-pressed="false">Original size</button></div>
+  </dialog>`);
+  const status = dialog.querySelector(".dialog-status");
+  const img = dialog.querySelector("img");
+  const zoom = dialog.querySelector(".image-size");
+  zoom.onclick = ()=>{
+    const actual = dialog.querySelector(".image-stage").classList.toggle("actual");
+    zoom.textContent = actual ? "Fit to screen" : "Original size";
+    zoom.setAttribute("aria-pressed",String(actual));
+  };
+  img.onload = ()=>{ status.textContent=""; img.hidden=false; zoom.disabled=false; };
+  img.onerror = ()=>{ status.textContent="This image could not be loaded. Close and try again."; img.hidden=true; };
+  try{
+    const url = await Backend.fileUrl(it);
+    if(!dialog.isConnected) return;
+    if(!url) throw new Error("Image unavailable");
+    img.src = url;
+  }catch{
+    status.textContent = "This image is unavailable. Close and try again.";
+  }
+}
+
+function openMoveDialog(){
+  const ids = [...selectedItems].filter(id=>items.some(it=>it.id===id && it.owner===myId()));
+  if(!ids.length) return;
+  const dialog = showAppDialog(`<dialog class="app-dialog" aria-labelledby="move-title">
+    <div class="dialog-header"><h2 id="move-title">Move ${ids.length} item${ids.length===1?'':'s'} to folder</h2><button class="ghost dialog-close">Cancel</button></div>
+    <form><label for="move-folder">Choose an existing folder or create one</label>
+      <input id="move-folder" list="move-folder-options" placeholder="Folder name" required maxlength="120" autofocus>
+      <datalist id="move-folder-options"></datalist>
+      <p class="dialog-status" role="status">Sharing permissions stay the same.</p>
+      <button class="primary" type="submit">Move to folder</button>
+    </form>
+  </dialog>`);
+  const suggestions = dialog.querySelector("datalist");
+  [...new Set(items.filter(it=>it.folder).map(it=>it.folder))].sort().forEach(name=>{
+    const option = document.createElement("option"); option.value=name; suggestions.appendChild(option);
+  });
+  let busy = false;
+  dialog.addEventListener("cancel",event=>{ if(busy) event.preventDefault(); });
+  const form = dialog.querySelector("form");
+  const input = dialog.querySelector("input");
+  input.oninput = ()=>input.setCustomValidity("");
+  form.onsubmit = async event=>{
+    event.preventDefault();
+    if(busy) return;
+    const folder = input.value.trim();
+    if(!folder){ input.setCustomValidity("Enter a folder name."); input.reportValidity(); return; }
+    busy=true;
+    dialog.querySelectorAll("button,input").forEach(el=>el.disabled=true);
+    const status=dialog.querySelector(".dialog-status");
+    status.textContent="Moving items…";
+    try{
+      const moved = await Backend.moveItems(ids.filter(id=>selectedItems.has(id)),folder);
+      items.forEach(it=>{ if(moved.includes(it.id)){ it.folder=folder; selectedItems.delete(it.id); } });
+      openFolders.add(folder);
+      paintItems();
+      if(ids.some(id=>selectedItems.has(id))){
+        status.textContent=`Moved ${moved.length} items. Some items could not be moved; they remain selected. You can retry.`;
+      }else{
+        selecting=false;
+        paintItems();
+        dialog.close();
+      }
+    }catch(error){
+      status.textContent=error.message || "Could not move these items. Please try again.";
+    }finally{
+      busy=false;
+      dialog.querySelectorAll("button,input").forEach(el=>el.disabled=false);
+    }
+  };
+}
+
 function itemNode(it){
   const mine = session && it.owner === session.user.id;
   const node = h(`<div class="item"></div>`);
   node.appendChild(itemIcon(it.kind));
   const body = h(`<div class="item-body"></div>`);
   node.appendChild(body);
+  if(selecting && mine){
+    const label = h(`<label class="item-select"><input type="checkbox" aria-label="Select ${esc(it.title||'Untitled')}">Select</label>`);
+    const checkbox = label.querySelector("input");
+    checkbox.checked = selectedItems.has(it.id);
+    node.classList.toggle("selected",checkbox.checked);
+    checkbox.onchange = ()=>{
+      if(checkbox.checked) selectedItems.add(it.id); else selectedItems.delete(it.id);
+      node.classList.toggle("selected",checkbox.checked);
+      updateSelectionBar();
+    };
+    body.appendChild(label);
+  }
 
   const head = h(`<div class="item-head"><p class="item-title">${highlight(it.title||"Untitled", searchQuery)}</p></div>`);
   if(mine) head.appendChild(h(`<span class="badge-mine">You</span>`));
@@ -1257,8 +1555,11 @@ function itemNode(it){
     }
   } else if(it.kind==="image"){
     const img = h(`<img class="thumb" alt="${esc(it.title)}">`);
-    Backend.fileUrl(it).then(u=>{ if(u) img.src=u; });
-    body.appendChild(img);
+    const preview = h(`<button class="image-preview" aria-label="View full image: ${esc(it.title)}"><span>View full image</span></button>`);
+    preview.prepend(img);
+    preview.onclick = ()=>openImageDialog(it);
+    Backend.fileUrl(it).then(u=>{ if(u) img.src=u; }).catch(()=>{});
+    body.appendChild(preview);
   } else if(it.demoNoContent){
     body.appendChild(h(`<p class="demo-limit">Preview/download isn't available for this sample file in Demo Mode.</p>`));
   }
@@ -1281,7 +1582,7 @@ function itemNode(it){
   }
 
   const meta = h(`<p class="item-meta"></p>`);
-  meta.appendChild(h(`<span class="owner">${esc(it.owner_email||"")}</span>`));
+  meta.appendChild(h(`<span class="owner">${esc(handleFor(it.owner))}</span>`));
   meta.appendChild(h(`<span class="sep">·</span>`));
   const time = h(`<span title="${fullTime(it.created_at)}">${timeAgo(it.created_at)}</span>`);
   meta.appendChild(time);
@@ -1370,7 +1671,8 @@ function startRealtime(){
   realtimeStarted = true;
   Backend.startRealtime(
     (newItem)=>{ if(!items.some(i=>i.id===newItem.id)){ items.unshift(newItem); paintTabs(); paintItems(); } },
-    (oldItem)=>{ const before=items.length; items = items.filter(i=>i.id!==oldItem.id); if(items.length!==before){ paintTabs(); paintItems(); } }
+    (oldItem)=>{ const before=items.length; items = items.filter(i=>i.id!==oldItem.id); if(items.length!==before){ paintTabs(); paintItems(); } },
+    (updated)=>{ const index=items.findIndex(it=>it.id===updated.id); if(index>=0) items[index]=updated; else items.unshift(updated); paintTabs(); paintItems(); }
   );
 }
 function stopRealtime(){ if(realtimeStarted){ Backend.stopRealtime(); realtimeStarted=false; } }
