@@ -150,26 +150,43 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);
 .tab.active .count.has{color:inherit;opacity:.85}
 .result-count{color:var(--muted-2);font-size:12.5px;white-space:nowrap}
 
-/* ---- folder stacks ---- */
-.folder-group{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:border-color .15s}
-.folder-group.open{border-color:#3A4150}
-.folder-head{width:100%;display:flex;align-items:center;gap:12px;padding:12px 15px;background:none;color:var(--text);text-align:left;border-radius:0}
-.folder-head:hover{background:var(--panel-2)}
-.folder-visual{position:relative;width:40px;height:32px;flex:none}
-.folder-page{position:absolute;top:-2px;width:20px;height:24px;border-radius:5px;background:linear-gradient(to bottom,#E8E7F0,#DCDAE8);box-shadow:0 2px 6px rgba(0,0,0,.3);transition:transform .4s cubic-bezier(.34,1.56,.64,1)}
-.folder-page-a{left:1px;transform:rotate(-6deg)}
-.folder-page-b{left:9px;transform:rotate(0deg)}
-.folder-page-c{left:17px;transform:rotate(6deg)}
-.folder-group.open .folder-page-a{transform:rotate(-14deg) translate(-8px,-11px)}
-.folder-group.open .folder-page-b{transform:rotate(1deg) translate(0,-15px)}
-.folder-group.open .folder-page-c{transform:rotate(14deg) translate(8px,-11px)}
-.folder-shell{position:absolute;bottom:0;left:0;width:40px;height:21px;border-radius:7px;background:#18151B;box-shadow:0 0 10px 8px rgba(79,73,85,.28) inset;z-index:1;transition:transform .45s ease;transform-origin:bottom;perspective:200px}
-.folder-group.open .folder-shell{transform:rotateX(-32deg)}
-.folder-name{flex:1;font-size:13.5px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.folder-head .count{opacity:.6;font-size:12px}
-.folder-chevron{color:var(--muted-2);transition:transform .2s ease;display:flex;flex:none}
-.folder-group.open .folder-chevron{transform:rotate(90deg)}
-.folder-body{display:flex;flex-direction:column;gap:10px;padding:2px 15px 15px;border-top:1px solid var(--border-soft);margin-top:2px;padding-top:12px}
+/* ---- folder cards ----
+   Sized entirely in cqw (container-query width units) off .folder-card's
+   own box, so the folder shape stays pixel-proportional at any grid width
+   with no extra breakpoints needed. */
+.folder-card{container-type:inline-size;background:none;border:none;padding:0;margin:0;display:block;width:100%;text-align:left;color:inherit}
+.folder-card-bezel{position:relative;display:block;width:100%;aspect-ratio:544/522;border-radius:8.46cqw;background:var(--panel-2);border:1px solid var(--border);padding:2.4cqw;box-shadow:0 1.4cqw 3.6cqw -1.6cqw rgba(0,0,0,.55);transition:transform .22s cubic-bezier(.2,.8,.2,1),box-shadow .22s ease,border-color .22s ease}
+.folder-card:hover .folder-card-bezel{transform:translateY(-4px);border-color:#3A4150;box-shadow:0 2.4cqw 4.8cqw -1.6cqw rgba(0,0,0,.6)}
+.folder-card:active .folder-card-bezel{transform:translateY(-1px) scale(.99)}
+.folder-card:focus-visible .folder-card-bezel{outline:2px solid var(--accent);outline-offset:2px}
+.folder-card-surface{display:block;position:relative;height:100%;width:100%;border-radius:5.88cqw;overflow:hidden;background:var(--bg)}
+/* The cover sits full-bleed behind everything; the panel on top of it is
+   the shape that actually reads as a "folder". Its top edge is cut into
+   two flat shoulders joined by a diagonal — flat and high over the tab
+   (left), then dropping lower over the body (right), so a big diagonal
+   slice of the cover shows through on the right, exactly like a photo
+   peeking out from under a folder's front flap. */
+.folder-cover{position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:flex-end;padding:9% 8% 0 0;overflow:hidden;transition:transform .3s ease}
+.folder-card:hover .folder-cover{transform:scale(1.06)}
+.folder-cover-icon{width:30%;aspect-ratio:1;color:#fff;opacity:.4}
+.folder-cover-icon svg{display:block;width:100%;height:100%}
+/* The panel (shape+fill) and the copy riding in its tab move together as
+   one unit on hover, but copy is a SIBLING of the clipped panel — not a
+   child — so the clip-path never slices through the letters. */
+.folder-front{position:absolute;inset:0;transition:transform .3s cubic-bezier(.2,.8,.2,1)}
+.folder-card:hover .folder-front{transform:translateY(6%)}
+.folder-panel{position:absolute;inset:0;background:linear-gradient(180deg,var(--panel-2),var(--panel) 65%);clip-path:polygon(0% 26%,46% 26%,62% 40%,100% 40%,100% 100%,0% 100%)}
+.folder-copy{position:absolute;left:8%;top:33%;right:48%;line-height:1.3}
+.folder-title{margin:0;font-size:4.6cqw;font-weight:650;letter-spacing:-.01em;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.folder-subtitle{margin:.7cqw 0 0;font-size:3.6cqw;font-weight:500;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.folder-footer{position:absolute;left:8%;right:8%;bottom:7%;display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.folder-count-num{font-size:8.6cqw;font-weight:700;letter-spacing:-.01em;color:var(--text)}
+.folder-count-label{margin-left:1.3cqw;font-size:3.6cqw;font-weight:500;color:var(--muted)}
+.folder-meta{font-size:3.6cqw;font-weight:600;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.folder-dialog{width:min(720px,calc(100% - 32px));max-width:760px}
+.folder-dialog-list{display:flex;flex-direction:column;gap:10px;margin-top:4px}
+.folder-tag{display:inline-flex;align-items:center;gap:4px;color:var(--muted)}
+.folder-tag svg{width:11px;height:11px;flex:none}
 
 /* ---- items ---- */
 .items{display:flex;flex-direction:column;gap:10px}
@@ -255,6 +272,7 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);
 .transcript-text{white-space:pre-wrap;word-break:break-word;font-size:13.5px;line-height:1.6;color:var(--text);margin:0}
 .transcript-text mark{background:var(--accent);color:var(--accent-ink);border-radius:2px}
 .transcript.clamped .transcript-text{max-height:8.6em;overflow:hidden;position:relative}
+.transcript.clamped .transcript-text::after{content:"";position:absolute;left:0;right:0;bottom:0;height:3em;background:linear-gradient(transparent,var(--bg));pointer-events:none}
 .transcribing{display:flex;align-items:center;gap:8px;color:var(--accent);font-size:12.5px;margin-top:9px}
 .spinner{width:13px;height:13px;border:2px solid var(--accent-soft);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;flex:none}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -291,8 +309,6 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);
   .item{flex-direction:column;padding:13px 14px}
   .item-actions{flex-wrap:wrap;gap:12px}
   .item-head{flex-wrap:wrap}
-  .folder-body{padding-left:10px;padding-right:10px}
-  .folder-head{padding:11px 12px;gap:10px}
   .demo-banner{padding:10px 12px}
   .composer-row{gap:8px}
   .composer-row .primary{flex:1;justify-content:center}
@@ -354,8 +370,8 @@ body{font-size:16px}
 .item{padding:20px;min-width:0}.item-title{font-size:16px;word-break:normal;overflow-wrap:anywhere}
 .item-text,.transcript-text{font-size:15px}.item-text.code{font-size:13px}
 .item-actions{gap:8px;flex-wrap:wrap}.item-actions button{font-size:14px;min-height:40px;padding:6px 9px;border-radius:8px;background:var(--panel-2)}
-.item-meta{font-size:12px}.folder-name{font-size:15px}.folder-head{min-height:64px}
-.folder-body .item{padding:14px}.folder-group,.more-bar{grid-column:1/-1;min-width:0}
+.item-meta{font-size:12px}
+.more-bar{grid-column:1/-1;min-width:0}
 audio,video{max-width:100%}.empty{background:var(--panel);border:1px dashed var(--border);border-radius:var(--radius)}
 button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
 .compose-toggle{display:none}
@@ -394,7 +410,6 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
   .item-body{width:100%;min-width:0}.item-head{gap:6px;min-height:28px;padding-right:34px;justify-content:flex-start}.item-title{font-size:15px}
   .item-text{font-size:15px}.item-text.code{padding:10px;font-size:13px}.item-actions{gap:8px;margin-top:12px}.item-actions button{min-height:44px;padding:8px 12px;justify-content:center}
   .item-meta{overflow-wrap:anywhere}.item-meta .owner{min-width:0;overflow-wrap:anywhere}.item-select{padding-right:34px}
-  .folder-head{padding:12px;gap:10px}.folder-body{padding:10px;gap:10px}.folder-body .item{padding:12px}.folder-name{font-size:14px}
   .dropzone{padding:16px 12px}.file-btn{width:100%;position:relative}.dropzone>p{font-size:13px}.status:empty{display:none}
   .folder-field input{font-size:16px}.tag-field{min-width:0;width:100%}.tag-box input{min-width:0}
   .result-count{font-size:13px}.demo-banner{font-size:12px}.demo-banner>span>svg{display:inline-block;vertical-align:middle}
@@ -1211,7 +1226,6 @@ function matchesSearch(it, q){
          (it.folder||"").toLowerCase().includes(q);
 }
 
-const openFolders = new Set();
 
 const myId = ()=> session?.user?.id;
 function isForMe(it){ return (it.tagged||[]).includes(myId()) && it.owner !== myId(); }
@@ -1297,10 +1311,12 @@ function paintItems(){
 
   // Build the rows first (a folder counts as one row, not one per file),
   // then only render the first pageful so the page stays short.
+  // While searching, matches are shown flat (with a folder tag) rather
+  // than tucked inside a folder card, so you see the hit immediately.
   const rows = [];
   const renderedFolders = new Set();
   list.forEach(it=>{
-    if(it.folder){
+    if(it.folder && !searchQuery){
       if(renderedFolders.has(it.folder)) return;
       renderedFolders.add(it.folder);
       rows.push({folder:it.folder, group:list.filter(x=>x.folder===it.folder)});
@@ -1311,7 +1327,7 @@ function paintItems(){
 
   const shown = Math.min(visibleCount, rows.length);
   rows.slice(0, shown).forEach(r=>{
-    wrap.appendChild(r.folder ? folderNode(r.folder, r.group) : itemNode(r.it));
+    wrap.appendChild(r.folder ? folderNode(r.folder, r.group) : itemNode(r.it, {folderTag: !!(r.it.folder && searchQuery)}));
   });
 
   if(rows.length > shown){
@@ -1345,31 +1361,71 @@ function paintItems(){
   refreshFolderSuggestions();
 }
 
+// A folder-shaped card: a colour-washed cover peeking out from behind a
+// notched panel (a clip-path polygon: flat and high over the tab, then a
+// diagonal drop to a lower, wider body — same silhouette as a real folder
+// with something peeking out from under its front flap).
+function dominantKind(groupItems){
+  const counts = {};
+  groupItems.forEach(it=>counts[it.kind]=(counts[it.kind]||0)+1);
+  return Object.entries(counts).sort((a,b)=>b[1]-a[1])[0]?.[0] || "other";
+}
+const KIND_NOUN = {text:"note",code:"snippet",doc:"doc",image:"image",audio:"audio",other:"file"};
+function kindBreakdown(groupItems){
+  const counts = {};
+  groupItems.forEach(it=>counts[it.kind]=(counts[it.kind]||0)+1);
+  const parts = Object.entries(counts).sort((a,b)=>b[1]-a[1])
+    .map(([k,n])=>`${n} ${KIND_NOUN[k]||"file"}${n===1?"":"s"}`);
+  return parts.length<=2 ? parts.join(", ") : parts.slice(0,2).join(", ")+` +${parts.length-2}`;
+}
+function folderMeta(groupItems){
+  const totalSize = groupItems.reduce((s,it)=>s+(it.size||0),0);
+  if(totalSize>0) return humanSize(totalSize);
+  const latest = groupItems.reduce((max,it)=> new Date(it.created_at)>new Date(max.created_at)?it:max, groupItems[0]);
+  return "Updated "+timeAgo(latest.created_at);
+}
+function folderCoverStyle(name){
+  const h1 = hueFor(name), h2 = (h1+40)%360;
+  return `background:`
+    +`radial-gradient(120% 130% at 25% 120%, hsla(${h1},85%,70%,.55) 0%, hsla(${h1},70%,45%,.35) 40%, transparent 75%),`
+    +`radial-gradient(90% 100% at 75% -10%, hsla(${h2},90%,75%,.5) 0%, transparent 65%),`
+    +`linear-gradient(165deg, hsl(${h1} 45% 16%) 0%, hsl(${h2} 40% 10%) 100%)`;
+}
+
 function folderNode(name, groupItems){
-  const isOpen = selecting || !!searchQuery || openFolders.has(name);
-  const wrap = h(`<div class="folder-group ${isOpen?'open':''}"></div>`);
-  const head = h(`<button class="folder-head">
-    <span class="folder-visual">
-      <span class="folder-page folder-page-a"></span>
-      <span class="folder-page folder-page-b"></span>
-      <span class="folder-page folder-page-c"></span>
-      <span class="folder-shell"></span>
+  const dominant = dominantKind(groupItems);
+  const card = h(`<button type="button" class="folder-card" aria-haspopup="dialog">
+    <span class="folder-card-bezel">
+      <span class="folder-card-surface">
+        <span class="folder-cover" style="${folderCoverStyle(name)}">
+          <span class="folder-cover-icon">${kindIcon(dominant)}</span>
+        </span>
+        <span class="folder-front">
+          <span class="folder-panel"></span>
+          <span class="folder-copy">
+            <span class="folder-title">${esc(name)}</span>
+            <span class="folder-subtitle">${esc(kindBreakdown(groupItems))}</span>
+          </span>
+        </span>
+        <span class="folder-footer">
+          <span><span class="folder-count-num">${groupItems.length}</span><span class="folder-count-label">file${groupItems.length===1?"":"s"}</span></span>
+          <span class="folder-meta">${esc(folderMeta(groupItems))}</span>
+        </span>
+      </span>
     </span>
-    <span class="folder-name">${esc(name)}</span>
-    <span class="count">${groupItems.length}</span>
-    <span class="folder-chevron">${ICON.chevron}</span>
   </button>`);
-  head.onclick = ()=>{
-    if(openFolders.has(name)) openFolders.delete(name); else openFolders.add(name);
-    paintItems();
-  };
-  wrap.appendChild(head);
-  if(isOpen){
-    const body = h(`<div class="folder-body"></div>`);
-    groupItems.forEach(it=>body.appendChild(itemNode(it)));
-    wrap.appendChild(body);
-  }
-  return wrap;
+  card.setAttribute("aria-label", `Open folder ${name}, ${groupItems.length} item${groupItems.length===1?"":"s"}`);
+  card.onclick = ()=>openFolderDialog(name, groupItems);
+  return card;
+}
+
+function openFolderDialog(name, groupItems){
+  const dialog = showAppDialog(`<dialog class="app-dialog folder-dialog" aria-labelledby="folder-view-title">
+    <div class="dialog-header"><h2 id="folder-view-title">${esc(name)}</h2><button class="ghost dialog-close" autofocus>Close</button></div>
+    <div class="folder-dialog-list"></div>
+  </dialog>`);
+  const list = dialog.querySelector(".folder-dialog-list");
+  groupItems.forEach(it=>list.appendChild(itemNode(it)));
 }
 
 function refreshFolderSuggestions(){
@@ -1386,9 +1442,21 @@ function youtubeId(url){
 }
 
 function transcriptBlock(it){
-  const box = h(`<div class="transcript"></div>`);
+  const text = it.transcript||"";
+  // Long transcripts get collapsed to a readable preview so the feed stays scannable.
+  const long = text.split("\n").length > 6 || text.length > 400;
+  const box = h(`<div class="transcript ${long?'clamped':''}"></div>`);
   box.appendChild(h(`<div class="transcript-label">${ICON.audio}Transcript</div>`));
-  box.appendChild(h(`<p class="transcript-text">${highlight(it.transcript||"", searchQuery)}</p>`));
+  box.appendChild(h(`<p class="transcript-text">${highlight(text, searchQuery)}</p>`));
+  if(long){
+    const btn = h(`<button class="expand-btn">${ICON.caret}<span>Show more</span></button>`);
+    btn.onclick = ()=>{
+      const clamped = box.classList.toggle("clamped");
+      btn.classList.toggle("open", !clamped);
+      btn.querySelector("span").textContent = clamped ? "Show more" : "Show less";
+    };
+    box.appendChild(btn);
+  }
   return box;
 }
 
@@ -1497,7 +1565,6 @@ function openMoveDialog(){
     try{
       const moved = await Backend.moveItems(ids.filter(id=>selectedItems.has(id)),folder);
       items.forEach(it=>{ if(moved.includes(it.id)){ it.folder=folder; selectedItems.delete(it.id); } });
-      openFolders.add(folder);
       paintItems();
       if(ids.some(id=>selectedItems.has(id))){
         status.textContent=`Moved ${moved.length} items. Some items could not be moved; they remain selected. You can retry.`;
@@ -1515,7 +1582,7 @@ function openMoveDialog(){
   };
 }
 
-function itemNode(it){
+function itemNode(it, opts){
   const mine = session && it.owner === session.user.id;
   const node = h(`<div class="item"></div>`);
   node.appendChild(itemIcon(it.kind));
@@ -1587,6 +1654,10 @@ function itemNode(it){
   const time = h(`<span title="${fullTime(it.created_at)}">${timeAgo(it.created_at)}</span>`);
   meta.appendChild(time);
   if(it.size){ meta.appendChild(h(`<span class="sep">·</span>`)); meta.appendChild(h(`<span>${humanSize(it.size)}</span>`)); }
+  if(opts?.folderTag && it.folder){
+    meta.appendChild(h(`<span class="sep">·</span>`));
+    meta.appendChild(h(`<span class="folder-tag">${ICON.folder}${esc(it.folder)}</span>`));
+  }
   body.appendChild(meta);
 
   const actions = h(`<div class="item-actions"></div>`);
