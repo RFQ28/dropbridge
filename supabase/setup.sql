@@ -16,7 +16,8 @@ create table if not exists public.allowed_emails (
 -- Add yourself and the people you trust here.
 -- (You can also add rows later from the Table Editor.)
 insert into public.allowed_emails (email) values
-  ('you@example.com')
+  ('fudculture9ja@gmail.com'),
+  ('fvevr.king@gmail.com')
 on conflict (email) do nothing;
 
 -- Lock the allowlist down: nobody reads it directly through the API.
